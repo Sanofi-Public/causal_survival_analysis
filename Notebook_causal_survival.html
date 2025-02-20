@@ -1347,7 +1347,7 @@ where we recall that <span class="math inline">\operatorname{logit}(p) = \log(p/
 <pre><code>[1] "The ground truth for Obs scenario 1 at time 25 is 7.1"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "The ground truth for Obs scenario 2 at #time 25 is 7.1"</code></pre>
+<pre><code>[1] "The ground truth for Obs scenario 2 at #time 25 is 7.2"</code></pre>
 </div>
 </div>
 <p><strong>Estimation of the RMST</strong></p>
@@ -1805,112 +1805,112 @@ E[T^*_{\mathrm{IPCW}}|A=a,X]
 <p>The summary by group of treatment of the generated (observed and unobserved) RCT with independent censoring is displayed below:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=0:   985"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=0:   990"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       X1                X2                X3                X4         
- Min.   :-2.5236   Min.   :-2.5897   Min.   :-3.9149   Min.   :-2.1327  
- 1st Qu.: 0.3514   1st Qu.: 0.3269   1st Qu.:-1.6489   1st Qu.: 0.2611  
- Median : 1.0242   Median : 1.0433   Median :-0.9532   Median : 0.9696  
- Mean   : 1.0306   Mean   : 1.0321   Mean   :-0.9764   Mean   : 0.9587  
- 3rd Qu.: 1.7363   3rd Qu.: 1.7569   3rd Qu.:-0.2816   3rd Qu.: 1.6262  
- Max.   : 4.3575   Max.   : 4.4665   Max.   : 1.9038   Max.   : 4.4437  
-       C                   T1                T0                status      
- Min.   :  0.00086   Min.   :  10.01   Min.   :   0.0131   Min.   :0.0000  
- 1st Qu.:  9.98333   1st Qu.:  12.84   1st Qu.:   2.8429   1st Qu.:0.0000  
- Median : 24.73358   Median :  18.49   Median :   8.4900   Median :1.0000  
- Mean   : 34.31062   Mean   :  36.28   Mean   :  26.2757   Mean   :0.6934  
- 3rd Qu.: 48.16580   3rd Qu.:  34.03   3rd Qu.:  24.0313   3rd Qu.:1.0000  
- Max.   :208.92335   Max.   :1977.69   Max.   :1967.6921   Max.   :1.0000  
+<pre><code>       X1               X2                X3                X4         
+ Min.   :-2.007   Min.   :-2.0046   Min.   :-4.1986   Min.   :-1.9848  
+ 1st Qu.: 0.383   1st Qu.: 0.3790   1st Qu.:-1.6623   1st Qu.: 0.3318  
+ Median : 1.002   Median : 1.0091   Median :-1.0154   Median : 0.9925  
+ Mean   : 1.014   Mean   : 0.9928   Mean   :-1.0158   Mean   : 0.9947  
+ 3rd Qu.: 1.626   3rd Qu.: 1.6426   3rd Qu.:-0.3552   3rd Qu.: 1.6315  
+ Max.   : 4.990   Max.   : 4.0795   Max.   : 2.2003   Max.   : 3.7341  
+       C                   T1               T0               status      
+ Min.   :  0.01658   Min.   : 10.04   Min.   :  0.0356   Min.   :0.0000  
+ 1st Qu.: 10.68205   1st Qu.: 12.82   1st Qu.:  2.8226   1st Qu.:0.0000  
+ Median : 23.72170   Median : 18.79   Median :  8.7883   Median :1.0000  
+ Mean   : 34.57793   Mean   : 33.32   Mean   : 23.3197   Mean   :0.6636  
+ 3rd Qu.: 46.90198   3rd Qu.: 34.04   3rd Qu.: 24.0365   3rd Qu.:1.0000  
+ Max.   :196.36069   Max.   :657.91   Max.   :647.9068   Max.   :1.0000  
      T_tild         
- Min.   :  0.00086  
- 1st Qu.:  2.25891  
- Median :  6.37080  
- Mean   : 11.31370  
- 3rd Qu.: 14.29682  
- Max.   :117.50074  </code></pre>
+ Min.   :  0.01658  
+ 1st Qu.:  2.11754  
+ Median :  6.18826  
+ Mean   : 11.03189  
+ 3rd Qu.: 14.83903  
+ Max.   :139.09460  </code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=1:   1015"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=1:   1010"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       X1                X2                X3                X4         
- Min.   :-2.6449   Min.   :-2.0004   Min.   :-4.0642   Min.   :-2.9694  
- 1st Qu.: 0.2646   1st Qu.: 0.2752   1st Qu.:-1.6003   1st Qu.: 0.2403  
- Median : 0.9767   Median : 0.9912   Median :-0.9831   Median : 0.9189  
- Mean   : 0.9542   Mean   : 0.9856   Mean   :-0.9949   Mean   : 0.9500  
- 3rd Qu.: 1.6452   3rd Qu.: 1.6729   3rd Qu.:-0.3624   3rd Qu.: 1.6336  
- Max.   : 4.0311   Max.   : 4.4407   Max.   : 2.3407   Max.   : 4.3603  
-       C                   T1                T0                status      
- Min.   :  0.04504   Min.   :  10.00   Min.   :   0.0031   Min.   :0.0000  
- 1st Qu.:  8.53000   1st Qu.:  13.25   1st Qu.:   3.2501   1st Qu.:0.0000  
- Median : 21.66246   Median :  19.78   Median :   9.7831   Median :0.0000  
- Mean   : 31.68343   Mean   :  35.35   Mean   :  25.3542   Mean   :0.4729  
- 3rd Qu.: 44.48905   3rd Qu.:  35.94   3rd Qu.:  25.9420   3rd Qu.:1.0000  
- Max.   :215.13323   Max.   :2313.59   Max.   :2303.5864   Max.   :1.0000  
-     T_tild        
- Min.   : 0.04504  
- 1st Qu.: 8.53000  
- Median :12.98467  
- Mean   :16.22446  
- 3rd Qu.:20.64051  
- Max.   :88.92883  </code></pre>
+ Min.   :-1.9677   Min.   :-2.3400   Min.   :-4.2994   Min.   :-2.3260  
+ 1st Qu.: 0.2240   1st Qu.: 0.3195   1st Qu.:-1.6172   1st Qu.: 0.4139  
+ Median : 0.9784   Median : 0.9986   Median :-0.9741   Median : 1.0086  
+ Mean   : 0.9466   Mean   : 1.0108   Mean   :-0.9849   Mean   : 1.0116  
+ 3rd Qu.: 1.6313   3rd Qu.: 1.6809   3rd Qu.:-0.3499   3rd Qu.: 1.6574  
+ Max.   : 4.4478   Max.   : 4.6539   Max.   : 1.6743   Max.   : 4.3578  
+       C                   T1               T0               status     
+ Min.   :  0.01064   Min.   : 10.00   Min.   :  0.0001   Min.   :0.000  
+ 1st Qu.:  9.99529   1st Qu.: 13.19   1st Qu.:  3.1857   1st Qu.:0.000  
+ Median : 23.40930   Median : 18.28   Median :  8.2795   Median :0.000  
+ Mean   : 33.43649   Mean   : 30.45   Mean   : 20.4533   Mean   :0.498  
+ 3rd Qu.: 47.19140   3rd Qu.: 33.30   3rd Qu.: 23.3000   3rd Qu.:1.000  
+ Max.   :206.83282   Max.   :338.47   Max.   :328.4731   Max.   :1.000  
+     T_tild         
+ Min.   :  0.01064  
+ 1st Qu.:  9.99529  
+ Median : 13.24707  
+ Mean   : 16.33028  
+ 3rd Qu.: 19.66457  
+ Max.   :139.55247  </code></pre>
 </div>
 </div>
 <p>Covariates are balanced between groups, and censoring times are the same (independent censoring). However, there are more censored observations in the treated group (<span class="math inline">A=1</span>) than in the control group (<span class="math inline">A=0</span>). This is due to the higher instantaneous hazard of the event in the treated group (with <span class="math inline">T_1=T_0+10</span>) compared to the constant hazard of censoring.</p>
 <p>The summary of the generated (observed and unobserved) RCT with conditionally independent censoring stratified by treatment is displayed below.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=0:   964"</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       X1                X2                X3                X4         
- Min.   :-2.3279   Min.   :-2.5447   Min.   :-4.5924   Min.   :-1.8025  
- 1st Qu.: 0.2760   1st Qu.: 0.3549   1st Qu.:-1.6702   1st Qu.: 0.3282  
- Median : 0.9830   Median : 0.9971   Median :-0.9743   Median : 0.9769  
- Mean   : 0.9788   Mean   : 1.0280   Mean   :-0.9749   Mean   : 0.9950  
- 3rd Qu.: 1.6374   3rd Qu.: 1.7674   3rd Qu.:-0.2448   3rd Qu.: 1.6927  
- Max.   : 4.5411   Max.   : 4.8213   Max.   : 2.5693   Max.   : 3.9521  
-       C                   T1               T0               status      
- Min.   :  0.00297   Min.   : 10.00   Min.   :  0.0013   Min.   :0.0000  
- 1st Qu.:  2.27387   1st Qu.: 12.66   1st Qu.:  2.6632   1st Qu.:0.0000  
- Median :  6.64275   Median : 18.66   Median :  8.6634   Median :0.0000  
- Mean   : 14.71538   Mean   : 31.27   Mean   : 21.2681   Mean   :0.4357  
- 3rd Qu.: 17.57515   3rd Qu.: 34.20   3rd Qu.: 24.2010   3rd Qu.:1.0000  
- Max.   :152.20578   Max.   :759.20   Max.   :749.2000   Max.   :1.0000  
-   status_tau         T_tild         
- Min.   :0.0000   Min.   :  0.00131  
- 1st Qu.:0.0000   1st Qu.:  1.13353  
- Median :0.0000   Median :  3.36060  
- Mean   :0.4772   Mean   :  8.11140  
- 3rd Qu.:1.0000   3rd Qu.:  9.44945  
- Max.   :1.0000   Max.   :139.23460  </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=1:   1036"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=0:   998"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       X1                X2                X3               X4         
- Min.   :-2.4498   Min.   :-2.1076   Min.   :-4.646   Min.   :-2.0920  
- 1st Qu.: 0.3273   1st Qu.: 0.3262   1st Qu.:-1.668   1st Qu.: 0.3489  
- Median : 1.0329   Median : 1.0255   Median :-1.018   Median : 1.0191  
- Mean   : 1.0141   Mean   : 1.0011   Mean   :-1.020   Mean   : 1.0261  
- 3rd Qu.: 1.6857   3rd Qu.: 1.6832   3rd Qu.:-0.387   3rd Qu.: 1.7233  
- Max.   : 4.5067   Max.   : 3.5919   Max.   : 2.644   Max.   : 4.3230  
-       C                  T1               T0               status      
- Min.   :  0.0053   Min.   : 10.01   Min.   :  0.0119   Min.   :0.0000  
- 1st Qu.:  2.9355   1st Qu.: 12.91   1st Qu.:  2.9079   1st Qu.:0.0000  
- Median :  7.9019   Median : 18.74   Median :  8.7440   Median :0.0000  
- Mean   : 17.8265   Mean   : 31.50   Mean   : 21.5006   Mean   :0.2336  
- 3rd Qu.: 20.2425   3rd Qu.: 31.47   3rd Qu.: 21.4691   3rd Qu.:0.0000  
- Max.   :458.6305   Max.   :448.16   Max.   :438.1561   Max.   :1.0000  
+ Min.   :-1.9585   Min.   :-1.9951   Min.   :-5.366   Min.   :-2.0649  
+ 1st Qu.: 0.3952   1st Qu.: 0.3003   1st Qu.:-1.716   1st Qu.: 0.2839  
+ Median : 1.0662   Median : 1.0128   Median :-1.028   Median : 0.9961  
+ Mean   : 1.0436   Mean   : 0.9936   Mean   :-1.010   Mean   : 0.9886  
+ 3rd Qu.: 1.7090   3rd Qu.: 1.6620   3rd Qu.:-0.353   3rd Qu.: 1.6918  
+ Max.   : 3.8051   Max.   : 4.0495   Max.   : 1.995   Max.   : 4.2625  
+       C                   T1                T0               status      
+ Min.   :  0.00441   Min.   :  10.01   Min.   :   0.007   Min.   :0.0000  
+ 1st Qu.:  2.35128   1st Qu.:  12.89   1st Qu.:   2.893   1st Qu.:0.0000  
+ Median :  6.63275   Median :  18.14   Median :   8.139   Median :0.0000  
+ Mean   : 13.77994   Mean   :  35.48   Mean   :  25.481   Mean   :0.4319  
+ 3rd Qu.: 15.61906   3rd Qu.:  32.42   3rd Qu.:  22.424   3rd Qu.:1.0000  
+ Max.   :208.90374   Max.   :3490.15   Max.   :3480.150   Max.   :1.0000  
    status_tau         T_tild         
- Min.   :0.0000   Min.   :  0.00532  
- 1st Qu.:0.0000   1st Qu.:  2.93553  
- Median :0.0000   Median :  7.90189  
- Mean   :0.2934   Mean   : 11.79507  
- 3rd Qu.:1.0000   3rd Qu.: 14.16026  
- Max.   :1.0000   Max.   :173.53980  </code></pre>
+ Min.   :0.0000   Min.   :  0.00441  
+ 1st Qu.:0.0000   1st Qu.:  1.30390  
+ Median :0.0000   Median :  3.48345  
+ Mean   :0.4679   Mean   :  7.49910  
+ 3rd Qu.:1.0000   3rd Qu.:  8.65733  
+ Max.   :1.0000   Max.   :122.47173  </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Descriptive statistics for group A=1:   1002"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       X1                X2                X3                X4         
+ Min.   :-1.9379   Min.   :-2.1179   Min.   :-3.7330   Min.   :-2.1730  
+ 1st Qu.: 0.3328   1st Qu.: 0.3103   1st Qu.:-1.6366   1st Qu.: 0.2524  
+ Median : 1.0019   Median : 1.0219   Median :-1.0094   Median : 0.9405  
+ Mean   : 0.9776   Mean   : 0.9871   Mean   :-1.0034   Mean   : 0.9361  
+ 3rd Qu.: 1.6168   3rd Qu.: 1.6229   3rd Qu.:-0.3471   3rd Qu.: 1.5788  
+ Max.   : 4.4710   Max.   : 3.9859   Max.   : 1.8052   Max.   : 4.4316  
+       C                   T1               T0               status      
+ Min.   :  0.02934   Min.   : 10.01   Min.   :  0.0091   Min.   :0.0000  
+ 1st Qu.:  3.06135   1st Qu.: 13.00   1st Qu.:  2.9968   1st Qu.:0.0000  
+ Median :  8.11913   Median : 18.64   Median :  8.6439   Median :0.0000  
+ Mean   : 16.78269   Mean   : 32.24   Mean   : 22.2361   Mean   :0.2265  
+ 3rd Qu.: 19.83065   3rd Qu.: 32.48   3rd Qu.: 22.4785   3rd Qu.:0.0000  
+ Max.   :219.05524   Max.   :766.23   Max.   :756.2340   Max.   :1.0000  
+   status_tau         T_tild         
+ Min.   :0.0000   Min.   :  0.02934  
+ 1st Qu.:0.0000   1st Qu.:  3.06135  
+ Median :0.0000   Median :  8.11913  
+ Mean   :0.2874   Mean   : 11.81728  
+ 3rd Qu.:1.0000   3rd Qu.: 14.33389  
+ Max.   :1.0000   Max.   :121.84637  </code></pre>
 </div>
 </div>
 <p>Covariates are balanced between the two groups. However, censoring times differ between groups due to conditionally independent censoring based on covariates and treatment group. Indeed, the distribution of <span class="math inline">C</span> is different between the treatment group.</p>
@@ -1920,112 +1920,112 @@ E[T^*_{\mathrm{IPCW}}|A=a,X]
 <p>The summary of the generated (observed and unobserved) data set observational study with independent censoring stratified by treatment is displayed below to enhance the difference with the other scenario.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=0:   1150"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=0:   1124"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       X1                X2                X3                X4         
- Min.   :-1.9430   Min.   :-2.2766   Min.   :-3.2151   Min.   :-2.1630  
- 1st Qu.: 0.6065   1st Qu.: 0.4776   1st Qu.:-1.0424   1st Qu.: 0.4787  
- Median : 1.2691   Median : 1.1451   Median :-0.4625   Median : 1.0850  
- Mean   : 1.2495   Mean   : 1.1649   Mean   :-0.4529   Mean   : 1.1240  
- 3rd Qu.: 1.9025   3rd Qu.: 1.8529   3rd Qu.: 0.1195   3rd Qu.: 1.7643  
- Max.   : 4.4364   Max.   : 4.3035   Max.   : 2.7820   Max.   : 4.2701  
+<pre><code>       X1                X2                X3                 X4         
+ Min.   :-2.2670   Min.   :-2.3529   Min.   :-2.93753   Min.   :-1.7046  
+ 1st Qu.: 0.5265   1st Qu.: 0.5741   1st Qu.:-1.06532   1st Qu.: 0.5631  
+ Median : 1.2067   Median : 1.1697   Median :-0.51500   Median : 1.1993  
+ Mean   : 1.1966   Mean   : 1.1903   Mean   :-0.49289   Mean   : 1.2183  
+ 3rd Qu.: 1.9118   3rd Qu.: 1.8497   3rd Qu.: 0.03934   3rd Qu.: 1.9315  
+ Max.   : 3.8135   Max.   : 4.7373   Max.   : 2.61848   Max.   : 3.8557  
+       C                   T1               T0               status     
+ Min.   :  0.01434   Min.   : 10.00   Min.   :  0.0011   Min.   :0.000  
+ 1st Qu.:  9.10954   1st Qu.: 12.93   1st Qu.:  2.9313   1st Qu.:0.000  
+ Median : 20.77324   Median : 17.65   Median :  7.6461   Median :1.000  
+ Mean   : 31.26425   Mean   : 29.40   Mean   : 19.3954   Mean   :0.669  
+ 3rd Qu.: 43.43466   3rd Qu.: 30.13   3rd Qu.: 20.1340   3rd Qu.:1.000  
+ Max.   :257.47449   Max.   :636.14   Max.   :626.1412   Max.   :1.000  
+     T_tild         
+ Min.   :  0.00106  
+ 1st Qu.:  2.12298  
+ Median :  5.33346  
+ Mean   :  9.67146  
+ 3rd Qu.: 12.24307  
+ Max.   :135.01465  </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Descriptive statistics for group A=1:   876"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       X1                X2                 X3                X4          
+ Min.   :-1.8420   Min.   :-2.20126   Min.   :-4.3534   Min.   :-2.19146  
+ 1st Qu.: 0.1759   1st Qu.: 0.08911   1st Qu.:-2.1677   1st Qu.: 0.05495  
+ Median : 0.7909   Median : 0.73398   Median :-1.5845   Median : 0.75262  
+ Mean   : 0.8010   Mean   : 0.71663   Mean   :-1.6234   Mean   : 0.72314  
+ 3rd Qu.: 1.3962   3rd Qu.: 1.36897   3rd Qu.:-1.0776   3rd Qu.: 1.33737  
+ Max.   : 4.7096   Max.   : 3.94867   Max.   : 0.7141   Max.   : 3.80417  
        C                   T1               T0               status      
- Min.   :  0.04734   Min.   : 10.01   Min.   :  0.0059   Min.   :0.0000  
- 1st Qu.:  8.99311   1st Qu.: 12.49   1st Qu.:  2.4889   1st Qu.:0.0000  
- Median : 22.49874   Median : 18.60   Median :  8.6019   Median :1.0000  
- Mean   : 32.91237   Mean   : 32.21   Mean   : 22.2122   Mean   :0.6774  
- 3rd Qu.: 45.17822   3rd Qu.: 34.34   3rd Qu.: 24.3351   3rd Qu.:1.0000  
- Max.   :244.82053   Max.   :576.34   Max.   :566.3391   Max.   :1.0000  
+ Min.   :  0.00155   Min.   : 10.02   Min.   :  0.0235   Min.   :0.0000  
+ 1st Qu.:  9.90340   1st Qu.: 13.52   1st Qu.:  3.5249   1st Qu.:0.0000  
+ Median : 22.41105   Median : 19.75   Median :  9.7469   Median :0.0000  
+ Mean   : 33.30829   Mean   : 33.71   Mean   : 23.7076   Mean   :0.4874  
+ 3rd Qu.: 44.89273   3rd Qu.: 35.01   3rd Qu.: 25.0129   3rd Qu.:1.0000  
+ Max.   :229.44270   Max.   :839.54   Max.   :829.5429   Max.   :1.0000  
      T_tild         
- Min.   :  0.00587  
- 1st Qu.:  1.82275  
- Median :  5.84077  
- Mean   : 10.56398  
- 3rd Qu.: 13.57477  
- Max.   :148.53604  </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=1:   850"</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       X1                X2                  X3                X4          
- Min.   :-1.8176   Min.   :-2.061886   Min.   :-4.3339   Min.   :-1.97767  
- 1st Qu.: 0.1049   1st Qu.: 0.009883   1st Qu.:-2.0522   1st Qu.: 0.06599  
- Median : 0.6814   Median : 0.699133   Median :-1.5571   Median : 0.74026  
- Mean   : 0.7087   Mean   : 0.676761   Mean   :-1.5535   Mean   : 0.74391  
- 3rd Qu.: 1.2922   3rd Qu.: 1.331124   3rd Qu.:-1.0178   3rd Qu.: 1.40484  
- Max.   : 3.4987   Max.   : 3.825865   Max.   : 0.8605   Max.   : 3.95678  
-       C                   T1                T0                status      
- Min.   :  0.01156   Min.   :  10.00   Min.   :   0.0027   Min.   :0.0000  
- 1st Qu.: 10.33194   1st Qu.:  13.64   1st Qu.:   3.6354   1st Qu.:0.0000  
- Median : 23.29503   Median :  20.32   Median :  10.3227   Median :0.0000  
- Mean   : 33.39517   Mean   :  37.89   Mean   :  27.8938   Mean   :0.4882  
- 3rd Qu.: 46.14018   3rd Qu.:  37.58   3rd Qu.:  27.5806   3rd Qu.:1.0000  
- Max.   :247.03099   Max.   :1435.79   Max.   :1425.7920   Max.   :1.0000  
-     T_tild         
- Min.   :  0.01156  
- 1st Qu.: 10.04984  
- Median : 13.95149  
- Mean   : 17.79292  
- 3rd Qu.: 21.82516  
- Max.   :144.05675  </code></pre>
+ Min.   :  0.00155  
+ 1st Qu.:  9.90340  
+ Median : 13.54844  
+ Mean   : 17.08616  
+ 3rd Qu.: 20.70031  
+ Max.   :110.64427  </code></pre>
 </div>
 </div>
 <p>The covariates between the two groups of treatment are unbalanced because of dependent treatment assignation. The mean of <span class="math inline">X1</span>, <span class="math inline">X2</span>, <span class="math inline">X3</span> and <span class="math inline">X4</span> is bigger in the control group than in the treated group. The censoring times have the same distribution (independent censoring). There are more censored observation in the treated group (A=1) than in the control group (A=0) for the same reason than in the RCT scenario.</p>
 <p>The summary of the generated (observed and unobserved) data set observational study with conditionally independent censoring stratified by treatment is displayed below.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=0:   1147"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=0:   1071"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       X1               X2                X3                 X4         
- Min.   :-1.655   Min.   :-2.2487   Min.   :-3.11033   Min.   :-1.6551  
- 1st Qu.: 0.581   1st Qu.: 0.5791   1st Qu.:-1.10528   1st Qu.: 0.6048  
- Median : 1.234   Median : 1.2014   Median :-0.52982   Median : 1.2603  
- Mean   : 1.218   Mean   : 1.2005   Mean   :-0.49607   Mean   : 1.2557  
- 3rd Qu.: 1.845   3rd Qu.: 1.8524   3rd Qu.: 0.08638   3rd Qu.: 1.9142  
- Max.   : 4.470   Max.   : 5.4846   Max.   : 2.27194   Max.   : 4.6098  
+<pre><code>       X1                X2                X3                 X4         
+ Min.   :-2.4789   Min.   :-2.2788   Min.   :-3.61606   Min.   :-2.0224  
+ 1st Qu.: 0.5757   1st Qu.: 0.4761   1st Qu.:-1.04146   1st Qu.: 0.5522  
+ Median : 1.1964   Median : 1.1757   Median :-0.50682   Median : 1.2415  
+ Mean   : 1.2206   Mean   : 1.1720   Mean   :-0.49480   Mean   : 1.2188  
+ 3rd Qu.: 1.9201   3rd Qu.: 1.7870   3rd Qu.: 0.01916   3rd Qu.: 1.8794  
+ Max.   : 3.8929   Max.   : 4.1327   Max.   : 2.08517   Max.   : 4.6092  
+       C                  T1               T0               status      
+ Min.   :  0.0034   Min.   : 10.01   Min.   :  0.0124   Min.   :0.0000  
+ 1st Qu.:  2.5577   1st Qu.: 12.46   1st Qu.:  2.4645   1st Qu.:0.0000  
+ Median :  6.6383   Median : 17.90   Median :  7.8954   Median :0.0000  
+ Mean   : 13.8400   Mean   : 30.82   Mean   : 20.8220   Mean   :0.4622  
+ 3rd Qu.: 15.8111   3rd Qu.: 30.32   3rd Qu.: 20.3231   3rd Qu.:1.0000  
+ Max.   :357.1739   Max.   :653.89   Max.   :643.8878   Max.   :1.0000  
+   status_tau         T_obs                 e            
+ Min.   :0.0000   Min.   :  0.00339   Min.   :0.0000293  
+ 1st Qu.:0.0000   1st Qu.:  1.25274   1st Qu.:0.0212067  
+ Median :1.0000   Median :  3.37603   Median :0.1050512  
+ Mean   :0.5051   Mean   :  7.17454   Mean   :0.2029694  
+ 3rd Qu.:1.0000   3rd Qu.:  8.43379   3rd Qu.:0.3051387  
+ Max.   :1.0000   Max.   :169.69871   Max.   :0.9964310  </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Descriptive statistics for group A=1:   929"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       X1                X2                X3               X4          
+ Min.   :-2.5212   Min.   :-1.7964   Min.   :-4.590   Min.   :-2.28095  
+ 1st Qu.: 0.1081   1st Qu.: 0.1002   1st Qu.:-2.148   1st Qu.: 0.07191  
+ Median : 0.7515   Median : 0.7829   Median :-1.635   Median : 0.74153  
+ Mean   : 0.7524   Mean   : 0.7795   Mean   :-1.632   Mean   : 0.73067  
+ 3rd Qu.: 1.3547   3rd Qu.: 1.4163   3rd Qu.:-1.102   3rd Qu.: 1.39219  
+ Max.   : 3.7369   Max.   : 3.8766   Max.   : 1.757   Max.   : 4.07217  
        C                   T1               T0               status      
- Min.   :  0.00652   Min.   : 10.01   Min.   :  0.0079   Min.   :0.0000  
- 1st Qu.:  2.36919   1st Qu.: 12.66   1st Qu.:  2.6586   1st Qu.:0.0000  
- Median :  6.67745   Median : 18.00   Median :  8.0037   Median :0.0000  
- Mean   : 13.58686   Mean   : 30.15   Mean   : 20.1484   Mean   :0.4499  
- 3rd Qu.: 15.79500   3rd Qu.: 30.54   3rd Qu.: 20.5373   3rd Qu.:1.0000  
- Max.   :300.58333   Max.   :524.61   Max.   :514.6135   Max.   :1.0000  
-   status_tau         T_obs                e            
- Min.   :0.0000   Min.   : 0.00652   Min.   :0.0000287  
- 1st Qu.:0.0000   1st Qu.: 1.16206   1st Qu.:0.0203239  
- Median :0.0000   Median : 3.44860   Median :0.0975289  
- Mean   :0.4882   Mean   : 7.36461   Mean   :0.2002391  
- 3rd Qu.:1.0000   3rd Qu.: 8.73726   3rd Qu.:0.2935835  
- Max.   :1.0000   Max.   :91.12382   Max.   :0.9786756  </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=1:   853"</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       X1                 X2                 X3                X4          
- Min.   :-2.14184   Min.   :-2.59580   Min.   :-3.9632   Min.   :-2.51910  
- 1st Qu.: 0.08177   1st Qu.: 0.01965   1st Qu.:-2.1692   1st Qu.: 0.08293  
- Median : 0.76277   Median : 0.70195   Median :-1.6188   Median : 0.74097  
- Mean   : 0.75836   Mean   : 0.68409   Mean   :-1.6249   Mean   : 0.75192  
- 3rd Qu.: 1.40523   3rd Qu.: 1.37004   3rd Qu.:-1.1012   3rd Qu.: 1.42789  
- Max.   : 4.22835   Max.   : 3.78462   Max.   : 0.6621   Max.   : 3.72442  
-       C                  T1                T0                status      
- Min.   :  0.0041   Min.   :  10.02   Min.   :   0.0156   Min.   :0.0000  
- 1st Qu.:  2.9184   1st Qu.:  12.89   1st Qu.:   2.8858   1st Qu.:0.0000  
- Median :  7.3862   Median :  18.70   Median :   8.6972   Median :0.0000  
- Mean   : 16.4179   Mean   :  35.59   Mean   :  25.5877   Mean   :0.1958  
- 3rd Qu.: 17.8228   3rd Qu.:  38.33   3rd Qu.:  28.3310   3rd Qu.:0.0000  
- Max.   :366.7964   Max.   :1107.79   Max.   :1097.7863   Max.   :1.0000  
-   status_tau         T_obs                 e         
- Min.   :0.0000   Min.   :  0.00407   Min.   :0.0145  
- 1st Qu.:0.0000   1st Qu.:  2.91843   1st Qu.:0.6080  
- Median :0.0000   Median :  7.38624   Median :0.8523  
- Mean   :0.2521   Mean   : 11.44632   Mean   :0.7506  
- 3rd Qu.:1.0000   3rd Qu.: 13.84139   3rd Qu.:0.9596  
- Max.   :1.0000   Max.   :153.34551   Max.   :0.9999  </code></pre>
+ Min.   :  0.01106   Min.   : 10.01   Min.   :  0.0061   Min.   :0.0000  
+ 1st Qu.:  2.59870   1st Qu.: 13.01   1st Qu.:  3.0113   1st Qu.:0.0000  
+ Median :  7.51505   Median : 18.91   Median :  8.9054   Median :0.0000  
+ Mean   : 15.65484   Mean   : 32.05   Mean   : 22.0483   Mean   :0.2142  
+ 3rd Qu.: 18.06730   3rd Qu.: 33.38   3rd Qu.: 23.3786   3rd Qu.:0.0000  
+ Max.   :267.17737   Max.   :875.00   Max.   :864.9975   Max.   :1.0000  
+   status_tau         T_obs                 e          
+ Min.   :0.0000   Min.   :  0.01106   Min.   :0.00111  
+ 1st Qu.:0.0000   1st Qu.:  2.59870   1st Qu.:0.59385  
+ Median :0.0000   Median :  7.51505   Median :0.84493  
+ Mean   :0.2573   Mean   : 10.86027   Mean   :0.74734  
+ 3rd Qu.:1.0000   3rd Qu.: 13.84885   3rd Qu.:0.95867  
+ Max.   :1.0000   Max.   :223.43097   Max.   :0.99992  </code></pre>
 </div>
 </div>
 <p>The covariates between the two groups are unbalanced. The censoring time is dependent on the covariates also, as the covariates are unbalanced between the two groups, the censoring time is also unbalanced. In particular, the mean of <span class="math inline">X1</span>, <span class="math inline">X2</span>, <span class="math inline">X3</span> and <span class="math inline">X4</span> is bigger in the control group than in the treated group. Also, the number of events is bigger in the control than treated group.</p>
@@ -2062,87 +2062,87 @@ E[T^*_{\mathrm{IPCW}}|A=a,X]
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>       X1                X2                X3                 X4         
- Min.   :-2.7446   Min.   :-2.4541   Min.   :-2.59667   Min.   :-2.6268  
- 1st Qu.:-0.1633   1st Qu.:-0.1694   1st Qu.: 0.01231   1st Qu.:-0.1680  
- Median : 0.5199   Median : 0.4919   Median : 0.70194   Median : 0.5016  
- Mean   : 0.5073   Mean   : 0.4902   Mean   : 0.69381   Mean   : 0.5015  
- 3rd Qu.: 1.1769   3rd Qu.: 1.1674   3rd Qu.: 1.37553   3rd Qu.: 1.1605  
- Max.   : 3.9350   Max.   : 4.0276   Max.   : 4.27090   Max.   : 3.8277  
-      tau            A               T0                  T1        
- Min.   :0.5   Min.   :0.000   Min.   : 0.000001   Min.   : 1.000  
- 1st Qu.:0.5   1st Qu.:0.000   1st Qu.: 0.034226   1st Qu.: 1.034  
- Median :0.5   Median :1.000   Median : 0.179655   Median : 1.180  
- Mean   :0.5   Mean   :0.585   Mean   : 0.764829   Mean   : 1.765  
- 3rd Qu.:0.5   3rd Qu.:1.000   3rd Qu.: 0.690031   3rd Qu.: 1.690  
- Max.   :0.5   Max.   :1.000   Max.   :25.831247   Max.   :26.831  
-       C                T_obs             T_obs_tau             status     
- Min.   :   0.000   Min.   : 0.000005   Min.   :0.0000045   Min.   :0.000  
- 1st Qu.:   0.130   1st Qu.: 0.048873   1st Qu.:0.0488726   1st Qu.:0.000  
- Median :   0.485   Median : 0.222664   Median :0.2226639   Median :0.000  
- Mean   :   6.832   Mean   : 0.503369   Mean   :0.2603225   Mean   :0.451  
- 3rd Qu.:   1.668   3rd Qu.: 0.831223   3rd Qu.:0.5000000   3rd Qu.:1.000  
- Max.   :3867.451   Max.   :14.370667   Max.   :0.5000000   Max.   :1.000  
-   status_tau  censor.status         e            
- Min.   :0.0   Min.   :0.000   Min.   :0.0000182  
- 1st Qu.:0.0   1st Qu.:0.000   1st Qu.:0.4091941  
- Median :1.0   Median :1.000   Median :0.5966310  
- Mean   :0.6   Mean   :0.549   Mean   :0.5861943  
- 3rd Qu.:1.0   3rd Qu.:1.000   3rd Qu.:0.8003085  
- Max.   :1.0   Max.   :1.000   Max.   :0.9999897  </code></pre>
+ Min.   :-3.7849   Min.   :-2.8225   Min.   :-2.53928   Min.   :-3.1559  
+ 1st Qu.:-0.1792   1st Qu.:-0.2034   1st Qu.:-0.02386   1st Qu.:-0.1719  
+ Median : 0.4681   Median : 0.4680   Median : 0.66853   Median : 0.4967  
+ Mean   : 0.4896   Mean   : 0.4845   Mean   : 0.67853   Mean   : 0.4900  
+ 3rd Qu.: 1.1591   3rd Qu.: 1.1514   3rd Qu.: 1.32387   3rd Qu.: 1.1761  
+ Max.   : 3.6871   Max.   : 3.9195   Max.   : 4.16092   Max.   : 4.2320  
+      tau            A               T0                 T1        
+ Min.   :0.5   Min.   :0.000   Min.   : 0.00000   Min.   : 1.000  
+ 1st Qu.:0.5   1st Qu.:0.000   1st Qu.: 0.03921   1st Qu.: 1.039  
+ Median :0.5   Median :1.000   Median : 0.20207   Median : 1.202  
+ Mean   :0.5   Mean   :0.599   Mean   : 0.83682   Mean   : 1.837  
+ 3rd Qu.:0.5   3rd Qu.:1.000   3rd Qu.: 0.73348   3rd Qu.: 1.733  
+ Max.   :0.5   Max.   :1.000   Max.   :37.46608   Max.   :38.466  
+       C                T_obs           T_obs_tau             status      
+ Min.   :   0.000   Min.   :0.00000   Min.   :0.0000003   Min.   :0.0000  
+ 1st Qu.:   0.125   1st Qu.:0.05637   1st Qu.:0.0563689   1st Qu.:0.0000  
+ Median :   0.510   Median :0.23555   Median :0.2355458   Median :0.0000  
+ Mean   :   6.576   Mean   :0.53316   Mean   :0.2658315   Mean   :0.4165  
+ 3rd Qu.:   1.676   3rd Qu.:0.88394   3rd Qu.:0.5000000   3rd Qu.:1.0000  
+ Max.   :3289.606   Max.   :8.59974   Max.   :0.5000000   Max.   :1.0000  
+   status_tau   censor.status          e            
+ Min.   :0.00   Min.   :0.0000   Min.   :0.0000042  
+ 1st Qu.:0.00   1st Qu.:0.0000   1st Qu.:0.4306355  
+ Median :1.00   Median :1.0000   Median :0.5938439  
+ Mean   :0.59   Mean   :0.5835   Mean   :0.5923651  
+ 3rd Qu.:1.00   3rd Qu.:1.0000   3rd Qu.:0.8063947  
+ Max.   :1.00   Max.   :1.0000   Max.   :0.9999936  </code></pre>
 </div>
 </div>
 <p>The summary of the generated (observed and unobserved) data set complex observational study (conditionally independent censoring) stratified by treatment is displayed below.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=0:   830"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=0:   802"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       X1                X2                 X3                 C           
- Min.   :-2.7446   Min.   :-2.41772   Min.   :-2.10503   Min.   :   0.000  
- 1st Qu.:-0.1914   1st Qu.: 0.02691   1st Qu.:-0.09348   1st Qu.:   0.141  
- Median : 0.5430   Median : 0.72953   Median : 0.45218   Median :   0.485  
- Mean   : 0.5026   Mean   : 0.69097   Mean   : 0.44715   Mean   :   9.586  
- 3rd Qu.: 1.1771   3rd Qu.: 1.33762   3rd Qu.: 0.98996   3rd Qu.:   1.715  
- Max.   : 3.9350   Max.   : 4.02759   Max.   : 2.93167   Max.   :3867.451  
-       T1               T0                status           T_obs         
- Min.   : 1.000   Min.   : 0.000005   Min.   :0.0000   Min.   :0.000005  
- 1st Qu.: 1.026   1st Qu.: 0.026085   1st Qu.:0.0000   1st Qu.:0.018238  
- Median : 1.119   Median : 0.118603   Median :1.0000   Median :0.078274  
- Mean   : 1.567   Mean   : 0.567221   Mean   :0.7072   Mean   :0.238080  
- 3rd Qu.: 1.541   3rd Qu.: 0.541164   3rd Qu.:1.0000   3rd Qu.:0.275990  
- Max.   :25.356   Max.   :24.355811   Max.   :1.0000   Max.   :3.362050  
+<pre><code>       X1                X2                  X3                 C           
+ Min.   :-3.7849   Min.   :-2.696062   Min.   :-2.18412   Min.   :  0.0000  
+ 1st Qu.:-0.1687   1st Qu.:-0.000338   1st Qu.:-0.09694   1st Qu.:  0.1251  
+ Median : 0.4286   Median : 0.687755   Median : 0.47480   Median :  0.4984  
+ Mean   : 0.4624   Mean   : 0.702076   Mean   : 0.46550   Mean   :  4.1211  
+ 3rd Qu.: 1.1201   3rd Qu.: 1.418505   3rd Qu.: 0.99962   3rd Qu.:  1.6898  
+ Max.   : 3.6601   Max.   : 3.919540   Max.   : 2.71062   Max.   :832.9675  
+       T1               T0               status           T_obs        
+ Min.   : 1.000   Min.   : 0.00000   Min.   :0.0000   Min.   :0.00000  
+ 1st Qu.: 1.034   1st Qu.: 0.03419   1st Qu.:0.0000   1st Qu.:0.01900  
+ Median : 1.163   Median : 0.16285   Median :1.0000   Median :0.08305  
+ Mean   : 1.638   Mean   : 0.63765   Mean   :0.6546   Mean   :0.23719  
+ 3rd Qu.: 1.560   3rd Qu.: 0.55981   3rd Qu.:1.0000   3rd Qu.:0.25895  
+ Max.   :31.714   Max.   :30.71403   Max.   :1.0000   Max.   :4.08595  
    status_tau           e            
- Min.   :0.0000   Min.   :0.0000182  
- 1st Qu.:1.0000   1st Qu.:0.2262644  
- Median :1.0000   Median :0.4272441  
- Mean   :0.7506   Mean   :0.4121812  
- 3rd Qu.:1.0000   3rd Qu.:0.5737604  
- Max.   :1.0000   Max.   :0.9836118  </code></pre>
+ Min.   :0.0000   Min.   :0.0000042  
+ 1st Qu.:0.0000   1st Qu.:0.2398431  
+ Median :1.0000   Median :0.4522161  
+ Mean   :0.7107   Mean   :0.4257312  
+ 3rd Qu.:1.0000   3rd Qu.:0.5826544  
+ Max.   :1.0000   Max.   :0.9861998  </code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "Descriptive statistics for group A=1:   1170"</code></pre>
+<pre><code>[1] "Descriptive statistics for group A=1:   1198"</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       X1                X2                X3                C            
- Min.   :-2.5447   Min.   :-2.4541   Min.   :-2.5967   Min.   :   0.0002  
- 1st Qu.:-0.1595   1st Qu.:-0.2762   1st Qu.: 0.1599   1st Qu.:   0.1194  
- Median : 0.4996   Median : 0.3492   Median : 0.9419   Median :   0.4849  
- Mean   : 0.5106   Mean   : 0.3478   Mean   : 0.8688   Mean   :   4.8779  
- 3rd Qu.: 1.1755   3rd Qu.: 0.9859   3rd Qu.: 1.6503   3rd Qu.:   1.6545  
- Max.   : 3.5713   Max.   : 3.4043   Max.   : 4.2709   Max.   :1508.2278  
-       T1               T0                status           T_obs          
- Min.   : 1.000   Min.   : 0.000001   Min.   :0.0000   Min.   : 0.000202  
- 1st Qu.: 1.046   1st Qu.: 0.045862   1st Qu.:0.0000   1st Qu.: 0.119396  
- Median : 1.228   Median : 0.228241   Median :0.0000   Median : 0.484930  
- Mean   : 1.905   Mean   : 0.905012   Mean   :0.2692   Mean   : 0.691565  
- 3rd Qu.: 1.793   3rd Qu.: 0.792991   3rd Qu.:1.0000   3rd Qu.: 1.046520  
- Max.   :26.831   Max.   :25.831247   Max.   :1.0000   Max.   :14.370667  
+<pre><code>       X1                X2                X3                C           
+ Min.   :-3.0951   Min.   :-2.8225   Min.   :-2.5393   Min.   :   0.000  
+ 1st Qu.:-0.1895   1st Qu.:-0.3135   1st Qu.: 0.0520   1st Qu.:   0.125  
+ Median : 0.5075   Median : 0.3240   Median : 0.8339   Median :   0.517  
+ Mean   : 0.5078   Mean   : 0.3389   Mean   : 0.8211   Mean   :   8.219  
+ 3rd Qu.: 1.1731   3rd Qu.: 0.9764   3rd Qu.: 1.5899   3rd Qu.:   1.645  
+ Max.   : 3.6871   Max.   : 3.6042   Max.   : 4.1609   Max.   :3289.606  
+       T1               T0               status           T_obs         
+ Min.   : 1.000   Min.   : 0.00000   Min.   :0.0000   Min.   :0.000039  
+ 1st Qu.: 1.044   1st Qu.: 0.04392   1st Qu.:0.0000   1st Qu.:0.124753  
+ Median : 1.233   Median : 0.23263   Median :0.0000   Median :0.516747  
+ Mean   : 1.970   Mean   : 0.97015   Mean   :0.2571   Mean   :0.731308  
+ 3rd Qu.: 1.913   3rd Qu.: 0.91259   3rd Qu.:1.0000   3rd Qu.:1.048496  
+ Max.   :38.466   Max.   :37.46608   Max.   :1.0000   Max.   :8.599741  
    status_tau           e          
- Min.   :0.0000   Min.   :0.02879  
- 1st Qu.:0.0000   1st Qu.:0.56267  
- Median :0.0000   Median :0.73531  
- Mean   :0.4932   Mean   :0.70964  
- 3rd Qu.:1.0000   3rd Qu.:0.89765  
+ Min.   :0.0000   Min.   :0.02982  
+ 1st Qu.:0.0000   1st Qu.:0.54116  
+ Median :1.0000   Median :0.72231  
+ Mean   :0.5092   Mean   :0.70392  
+ 3rd Qu.:1.0000   3rd Qu.:0.89790  
  Max.   :1.0000   Max.   :0.99999  </code></pre>
 </div>
 </div>
