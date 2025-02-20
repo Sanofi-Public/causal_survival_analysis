@@ -65,7 +65,7 @@ execute:
   echo: false
 format:  
   computo-html:  default
-  pdf: 
+  computo-pdf: 
     header-includes:
       - |
         \newcommand{\bbR}{\mathbb{R}}
@@ -91,11 +91,7 @@ format:
 editor:  
   markdown:  
     wrap:  7
-output:
-  pdf:
-    number_sections: true
-    toc: true
-    toc_depth: 3 
+
 
 ---
 
