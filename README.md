@@ -13,4 +13,4 @@ Causal survival analysis combines survival analysis and causal inference to eval
 
 [![build and publish](https://github.com/Sanofi-Public/causal_survival_analysis/actions/workflows/build.yml/badge.svg)](https://github.com/Sanofi-Public/causal_survival_analysis/actions/workflows/build.yml)
 
-[Notebook](https://sanofi-public.github.io/causal_survival_analysis/)
+Link to the [Notebook](https://sanofi-public.github.io/causal_survival_analysis/)
