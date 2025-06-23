@@ -1,9 +1,3 @@
-project:
-  type: website
-
-publish:
-  output-dir: _site 
-
 output:
   pdf:
     pdf-engine: lualatex
