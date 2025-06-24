@@ -74,7 +74,7 @@ By default, the notebook loads precomputed simulations due to the very long time
 1. To generate the figures and results from precomputed simulations:
 
 ```{r}
-quarto::quarto_render("code/main_simulations.qmd", params = list(run_simulations = FALSE))
+quarto::quarto_render("code/main_simulations.qmd", execute_params = list(run_simulations = FALSE))
 ```
 
 This will use the saved results to generate figures and tables
@@ -83,7 +83,7 @@ This will use the saved results to generate figures and tables
 2. To generate the figures and results from scratch: 
 
 ```{r}
-quarto::quarto_render("code/main_simulations.qmd", params = list(run_simulations = TRUE))
+quarto::quarto_render("code/main_simulations.qmd", execute_params = list(run_simulations = TRUE))
 ```
 
 This will run simulations under all defined scenarios
