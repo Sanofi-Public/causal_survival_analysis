@@ -1,0 +1,1732 @@
+---
+title:  "Causal survival analysis"
+subtitle:  "Treatment Effect Estimation in Causal Survival Analysis: Practical Recommendations"
+author:  
+  - name:  Charlotte Voinot
+    corresponding:  true
+    email:  charlotte.voinot@sanofi.com
+    url:  https://chvoinot.github.io/
+    affiliations:  
+      - name:  Sanofi R&D
+        department:  CMEI
+        url:  https://www.sanofi.fr/fr/
+      - name:  INRIA
+        department:  Premedical
+        url:  https://www.inria.fr/fr/premedical
+      - name:  INSERM
+        url:  https://www.inserm.fr/
+      - name:  Université de Montpellier
+        url:  https://www.umontpellier.fr/
+  - name: Clément Berenfeld
+    corresponding: true 
+    email: clement.berenfeld@uni-potsdam.de
+    url: https://cberenfeld.github.io
+    affiliations: 
+      - name: Universität Potsdam, Potsdam, Germany
+        departement: Institut für Mathematik
+        url: https://www.uni-potsdam.de/en/university-of-potsdam
+  - name: Imke Mayer
+    corresponding: true 
+    email: imke.mayer@owkin.com, now affiliated with Owkin
+    affiliations: 
+      - name: Charité -- Universität Berlin, Berlin, Germany
+        departement: Institut für Public Health
+        url: https://www.charite.de/
+  - name:  Bernard Sebastien
+    corresponding:  true
+    email:  bernard.sebastien@sanofi.com
+    affiliations:  
+      - name:  Sanofi R&D
+        department:  CMEI
+        url:  https://www.sanofi.fr/fr/
+  - name:  Julie Josse
+    corresponding:  true
+    email:  julie.josse@inria.fr
+    url:  https://juliejosse.com/
+    affiliations:  
+      - name:  INRIA
+        department:  Premedical
+        url:  https://www.inria.fr/fr/premedical
+      - name:  INSERM
+        url:  https://www.inserm.fr/
+      - name:  Université de Montpellier
+        url:  https://www.umontpellier.fr/
+ 
+date:  last-modified
+date-modified:  last-modified
+github-user:  chvoinot
+repo:  "Simple_simulation_causal_survival"
+format:
+  html:
+    self-contained: true
+    code-fold: true
+  pdf:
+    echo: false
+project: false
+editor:  
+  markdown:  
+    wrap:  7
+params:
+  run_simulations: false
+
+---
+
+
+Source files that define the estimator functions, along with auxiliary utilities necessary for their execution and integration into the simulation framework.
+
+```{r}
+if (!requireNamespace("this.path", quietly = TRUE)) install.packages("this.path")
+library(this.path)
+
+setwd(this.path::this.dir())
+
+source("estimators/Estimators.R")
+
+source("estimators/utilitary.R")
+```
+
+Data generating process: 
+```{r}
+source("simulate_data.R")
+```
+
+
+## RCT simulations
+
+### Descriptive analysis  
+
+```{r   message=FALSE, warning=FALSE}
+# data_rct1 simulate the data from RCT with independent censoring 
+data_rct1 <- simulate_data_RCT(n=2000,
+                               tau=25,
+                               scenario="RCT1",
+                               coefC = 0.03)
+# Stratification by treatment 
+group_0 <- data_rct1 %>%
+  dplyr:: filter(A == 0)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,T_tild=T_obs)
+
+group_1 <- data_rct1 %>%
+  dplyr:: filter(A == 1)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,T_tild=T_obs)
+
+# Summary statistics
+summary_group_0 <- summary(group_0)
+summary_group_1 <- summary(group_1)
+
+print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
+print(summary_group_0)
+
+print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
+print(summary_group_1)
+```
+
+```{r   message=FALSE, warning=FALSE}
+
+# data_rct2 simulate the data from RCT with dependent censoring 
+data_rct2 <- simulate_data_RCT(n=2000,
+                               tau=25,
+                               scenario="RCT2", 
+                               coefC = 0.03, 
+                               parsC = c(0.7,0.3,-0.25,-0.1),
+                               parsC_A = c(-0.2))
+
+
+# Stratification by treatment 
+group_0 <- data_rct2 %>%
+  dplyr:: filter(A == 0)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,status_tau,T_tild=T_obs)
+
+group_1 <- data_rct2 %>%
+  dplyr:: filter(A == 1)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,status_tau,T_tild=T_obs)
+
+# Summary statistics
+summary_group_0 <- summary(group_0)
+summary_group_1 <- summary(group_1)
+
+print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
+print(summary_group_0)
+
+print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
+print(summary_group_1)
+
+```
+
+```{r   message=FALSE, warning=FALSE}
+# Function to calculate ground truth for RCT and Observational data
+ground_truth <- function(tau, 
+                         data) {
+  # Compute RMST with the true T1
+  data$T1_tau <- ifelse(data$T1 >= tau, tau, data$T1)
+  
+  # Compute RMST with the true T0
+  data$T0_tau <- ifelse(data$T0 >= tau, tau, data$T0)
+  
+  # Compute the difference in RMST if everyone had the treatment 
+  # and if everyone had the control
+  truth <- mean(data$T1_tau) - mean(data$T0_tau)
+  
+  return(truth)
+}
+```
+
+```{r   message=FALSE, warning=FALSE}
+# Set initial tau value
+tau <- 25
+# Define vector of tau values
+vec_tau <- seq(1, 150, by = 1)
+
+# Function to plot the ground truth RMST for different scenarios
+plot_ground_truth <- function(data, vec_tau, tau, ylim, title_text) {
+  truth <- sapply(vec_tau, function(x) ground_truth(tau = x, data))
+  matplot(
+    vec_tau, truth, type = "l", lty = 1, col = 1,
+    ylab = "RMST", xlab = "tau", ylim = ylim
+  )
+  abline(v = tau, col = "red", lty = 2)
+  abline(h = truth[vec_tau == tau], col = "red", lty = 2)
+  title(title_text, cex.main = 0.9)  # Adjusting title text size
+}
+
+# Simulation for scenario RCT1
+data_RCT1 <- simulate_data_RCT(
+  n = 100000, tau = tau, scenario = "RCT1")
+
+plot_ground_truth(data_RCT1, 
+                  vec_tau, 
+                  tau, 
+                  c(0, 10), 
+                  "True difference in RMST for RCT scenario 1")
+
+truth_tau1 <- ground_truth(data_RCT1, tau = 25)
+print(paste0("The ground truth for RCT scenario 1 and 2 at time 25 is ", round(truth_tau1, 1)))
+truth_tau2 <- truth_tau1
+```
+
+
+```{r}
+# Function to launch the previous implemented functions in a 
+# specified scenario, sample size.
+all_estimates <- function(data, sample.size, tau,
+                          X.names.propensity,
+                          X.names.censoring,
+                          X.names.outcome,
+                          nuisance_propensity = "glm",
+                          nuisance_censoring = "cox",
+                          nuisance_survival = "cox",
+                          n.folds_propensity = NULL,
+                          n.folds_censoring = NULL,
+                          n.folds_survival = NULL,
+                          estimator = "all") {
+  
+  # List of available estimators
+  available_estimators <- c(
+    "Naive", "KM", "IPTW KM", "IPCW KM", "BJ", 
+    "IPTW-IPCW KM", "IPTW-BJ", "G_formula (T-learners)", 
+    "G_formula (S-learner)", "AIPTW-AIPCW", "SurvRM2 - KM", 
+    "grf - Causal Survival Forest", "RISCA - IPTW KM", 
+    "RISCA - G_formula (S-learner)"
+  )
+  
+  # If estimator is "all", we select all the estimators in 
+  # available_estimators
+  if ("all" %in% estimator) {
+    estimator <- available_estimators
+  }
+  
+  # Filter the selected estimators
+  estimator <- intersect(estimator, available_estimators)
+  
+  # Store the results in a data frame
+  results <- data.frame(
+    "sample.size" = numeric(),
+    "estimate" = numeric(),
+    "estimator" = character(),
+    "nuisance" = character()
+  )
+  
+  # Function to extract variable names from I() for squared terms and interaction terms
+  extract_vars <- function(names) {
+    # Extract names from squared terms
+    extracted_squared <- gsub("I\\((.*)\\^2\\)", "\\1", names)  # Replace "I(X^2)" with "X"
+    # Extract names from interaction terms (e.g., "X1:X2" becomes "X1" and "X2")
+    result_vector <- unique(unlist(strsplit(extracted_squared, ":")))
+    return(unique(result_vector))
+  }
+  # Combine all vectors
+  all_names <- c(X.names.propensity, X.names.outcome, X.names.censoring)
+  # Apply the extraction function
+  X.names <- extract_vars(all_names)
+  
+  # Each estimator is computed if selected
+  # Naive estimator
+  if ("Naive" %in% estimator) {
+    ATE_naive <- Naive(data, tau)
+    results <- rbind(results, data.frame(
+      "sample.size" = sample.size, "estimate" = ATE_naive, 
+      "estimator" = "Naive", "nuisance" = ""
+    ))
+  }
+  # RMST estimate with undajusted KM
+  if ("KM" %in% estimator) {
+    ATE_km_rct <- RMST_1(data, tau = tau)
+    results <- rbind(results, data.frame(
+      "sample.size" = sample.size, "estimate" = ATE_km_rct$RMST, 
+      "estimator" = "KM", "nuisance" = ""
+    ))
+  }
+  # RMST estimate with IPTW KM
+  if ("IPTW KM" %in% estimator) {
+    for (propensity_method in nuisance_propensity) {
+      ATE_km_adj <- IPTW_Kaplan_meier(data, tau = tau, 
+                                      X.names.propensity = X.names.propensity, 
+                                      nuisance_propensity = propensity_method, 
+                                      n.folds = n.folds_propensity)
+      if (propensity_method == "probability forest"){propensity_name = "Forest"}
+      else{propensity_name = "Log. Reg."}
+      est_name <- paste("IPTW KM (", propensity_name, ")", sep = "")
+      results <- rbind(results, data.frame(
+        "sample.size" = sample.size, "estimate" = ATE_km_adj$RMST, 
+        "estimator" = est_name, "nuisance" = propensity_method
+      ))
+    }
+  }
+  
+  # RMST estimate with IPCW KM
+  if ("IPCW KM" %in% estimator) {
+    for (censoring_method in nuisance_censoring) {
+      ATE_IPCW <- IPCW_Kaplan_meier(data, X.names.censoring = X.names.censoring, 
+                                    tau = tau, 
+                                    nuisance_censoring = censoring_method, 
+                                    n.folds = n.folds_censoring)
+      if (censoring_method == "survival forest"){censoring_name = "Forest"}
+      else{censoring_name = "Cox"}
+      est_name <- paste("IPCW KM (", censoring_name, ")", sep = "")
+      results <- rbind(results, data.frame(
+        "sample.size" = sample.size, "estimate" = ATE_IPCW$RMST, 
+        "estimator" = est_name , "nuisance" = censoring_method
+      ))
+    }
+  }
+  # RMST estimate with BJ pseudo observations
+  if ("BJ" %in% estimator) {
+    for (survival_method in nuisance_survival) {
+      ATE_bj <- BJ(data, tau = tau, 
+                   X.names.outcome = X.names.outcome,
+                   nuisance = survival_method, 
+                   n.folds = n.folds_survival)
+      if (survival_method == "survival forest"){survival_name = "Forest"}
+      else{survival_name = "Cox"}
+      est_name <- paste("BJ (", survival_name, ")", sep = "")
+      results <- rbind(results, data.frame(
+        "sample.size" = sample.size, "estimate" = ATE_bj$RMST, 
+        "estimator" = est_name, "nuisance" = survival_method
+      ))
+    }
+  }
+  
+  # RMST estimate with g-formula two-learners
+  if ("G_formula (T-learners)" %in% estimator) {
+    for (survival_method in nuisance_survival) {
+      ATE_g_formula_t <- g_formula_T_learner(data, tau = tau, 
+                                             X.names.outcome = X.names.outcome, 
+                                             nuisance_survival = survival_method, 
+                                             n.folds = n.folds_survival)
+      if (survival_method == "survival forest"){survival_name = "Forest"}
+      else{survival_name = "Cox"}
+      est_name <- paste("G-formula (", survival_name, "/ T-learners)", sep = "")
+      results <- rbind(results, data.frame(
+        "sample.size" = sample.size, "estimate" = ATE_g_formula_t, 
+        "estimator" = est_name, 
+        "nuisance" = survival_method
+      ))
+    }
+  }
+  
+  # RMST estimate with g-formula single learner
+  if ("G_formula (S-learner)" %in% estimator) {
+    for (survival_method in nuisance_survival) {
+      ATE_g_formula_s <- g_formula_S_learner(data, tau = tau, 
+                                             X.names.outcome = X.names.outcome, 
+                                             nuisance_survival = survival_method, 
+                                             n.folds = n.folds_survival)
+      if (survival_method == "survival forest"){survival_name = "Forest"}
+      else{survival_name = "Cox"}
+      est_name <- paste("G-formula (", survival_name, "/ S-learner)", sep = "")
+      results <- rbind(results, data.frame(
+        "sample.size" = sample.size, "estimate" = ATE_g_formula_s, 
+        "estimator" = est_name, 
+        "nuisance" = survival_method
+      ))
+    }
+  }
+  
+  
+  # RMST estimate with IPTW with pseudo observations (BJ transformation)
+  if ("IPTW-BJ" %in% estimator) {
+    for (survival_method in nuisance_survival) {
+      for (propensity_method in nuisance_propensity) {
+        ATE_IPTW_bj <- IPTW_BJ(data, tau = tau, 
+                               X.names.propensity = X.names.propensity, 
+                               X.names.outcome = X.names.outcome, 
+                               nuisance_propensity = propensity_method, 
+                               nuisance = survival_method, 
+                               n.folds = n.folds_survival)
+        if (survival_method == "survival forest"){survival_name = "Forest"}
+        else{survival_name = "Cox"}
+        if (propensity_method == "probability forest"){propensity_name = "Forest"}
+        else{propensity_name = "Log. Reg."}
+        if (propensity_name  == survival_name){
+          est_name <- paste("IPTW-BJ (", survival_name, ")", sep = "")
+        }
+        else{
+          est_name <- paste("IPTW-BJ (", survival_name," & ", propensity_name , ")", 
+                            sep = "")}
+        
+        
+        results <- rbind(results, data.frame(
+          "sample.size" = sample.size, "estimate" = ATE_IPTW_bj, 
+          "estimator" = est_name, 
+          "nuisance" = paste(survival_method, propensity_method, sep = ", ")
+        ))
+      }
+    }
+  }
+  
+  # RMST estimate with IPTW-IPCW KM
+  if ("IPTW-IPCW KM" %in% estimator) {
+    for (censoring_method in nuisance_censoring) {
+      for (propensity_method in nuisance_propensity) {
+        ATE_iptw_ipcw_km <- IPTW_IPCW_Kaplan_meier(data, tau = tau, 
+                                                   X.names.propensity = X.names.propensity, 
+                                                   X.names.censoring = X.names.censoring, 
+                                                   nuisance_propensity = propensity_method, 
+                                                   nuisance_censoring = censoring_method, 
+                                                   n.folds = n.folds_censoring)
+        if (censoring_method == "survival forest"){censoring_name = "Forest"}
+        else{censoring_name = "Cox"}
+        if (propensity_method == "probability forest"){propensity_name = "Forest"}
+        else{propensity_name = "Log. Reg."}
+        if (propensity_name  == censoring_name){
+          est_name <- paste("IPTW-IPCW KM (", censoring_name , ")", 
+                            sep = "")
+        }
+        else{
+          est_name <- paste("IPTW-IPCW KM (", censoring_name," & ", propensity_name , ")", 
+                            sep = "")}
+        results <- rbind(results, data.frame(
+          "sample.size" = sample.size, "estimate" = ATE_iptw_ipcw_km$RMST, 
+          "estimator" = est_name, 
+          "nuisance" = paste(censoring_method, propensity_method, sep = ", ")
+        ))
+      }
+    }
+  }
+  
+  
+  # RMST estimate with AIPTW with pseudo observations (AIPCW transformation)
+  if ("AIPTW-AIPCW" %in% estimator) {
+    for (survival_method in nuisance_survival) {
+      for (propensity_method in nuisance_propensity) {
+        for (censoring_method in nuisance_censoring) {
+          ATE_aiptw_aipcw <- AIPTW_AIPCW(data, tau = tau, 
+                                         X.names.propensity = X.names.propensity, 
+                                         X.names.censoring = X.names.censoring, 
+                                         X.names.outcome = X.names.outcome,
+                                         nuisance_propensity = propensity_method, 
+                                         nuisance_censoring = censoring_method, 
+                                         nuisance_Qt = survival_method, 
+                                         n.folds = n.folds_censoring)
+          if (survival_method == "survival forest"){survival_name = "Forest"}
+          else{survival_name = "Cox"}
+          if (propensity_method == "probability forest"){
+            propensity_name = "Forest"}
+          else{propensity_name = "Log. Reg."}
+          if (censoring_method == "survival forest"){
+            censoring_name = "Forest"}
+          else{censoring_name = "Cox"}
+          if (censoring_name == propensity_name & censoring_name == survival_name){
+            est_name <- paste("AIPTW-AIPCW (", survival_name, ")", sep = "")
+          }
+          else{
+            est_name <- paste("AIPTW-AIPCW (", survival_name," & ", 
+                              censoring_name ," & ", propensity_name , ")", sep = "")}
+          results <- rbind(results, data.frame(
+            "sample.size" = sample.size, 
+            "estimate" = ATE_aiptw_aipcw$AIPTW_AIPCW_IPW_res, 
+            "estimator" = est_name, 
+            "nuisance" = paste(survival_method, 
+                               censoring_method, 
+                               propensity_method , sep = ", ")
+          ))
+        }
+      }
+    }
+  }
+  
+  # Unadjusted estimate using package from SurvRM2
+  if ("SurvRM2 - KM" %in% estimator) {
+    ATE_pack <- tryCatch({
+      theta_rmst_survrm2(data, tau = tau)
+    }, error = function(e) {
+      message("Error in ATE_pack: ", e$message)
+      return(NA) 
+    })
+    results <- rbind(results, data.frame(
+      "sample.size" = sample.size, "estimate" = ATE_pack, 
+      "estimator" = "SurvRM2 - KM", "nuisance" = ""
+    ))
+  }
+  # Estimate using survival random forest from grf
+  # CSF can have a misspecification only on all nuisance parameters
+  if ("grf - Causal Survival Forest" %in% estimator) {
+    ATE_RF <- tryCatch({
+      # If there is no misspecification, X.names has to be defined as the 
+      # union of all the covariates which influence nuisance models
+      CSRF(data, X.names, tau = tau)
+    }, error = function(e) {
+      message("Error in ATE_RF: ", e$message)
+      return(NA) 
+    })
+    results <- rbind(results, data.frame(
+      "sample.size" = sample.size, "estimate" = ATE_RF, 
+      "estimator" = "grf - Causal Survival Forest", 
+      "nuisance" = ""
+    ))
+  }
+  
+  if ("RISCA - IPTW KM" %in% estimator) {
+    for (propensity_method in nuisance_propensity) {
+      # IPTW estimate from RISCA
+      ATE_RISCA_iptw <- tryCatch({
+        RISCA_iptw(data, X.names.propensity, propensity_method, tau = tau, 
+                   n.folds=n.folds_propensity)
+      }, error = function(e) {
+        message("Error in ATE_RISCA_iptw: ", e$message)
+        return(NA) 
+      })
+      if (propensity_method == "probability forest"){propensity_name = "Forest"}
+      else{propensity_name = "Log. Reg."}
+      est_name <- paste("RISCA - IPTW KM (", propensity_name, ")", sep = "")
+      results <- rbind(results, data.frame(
+        "sample.size" = sample.size, "estimate" = ATE_RISCA_iptw, 
+        "estimator" = est_name, 
+        "nuisance" = propensity_method
+      ))
+    }
+  }
+  # Only support Cox object
+  if ("RISCA - G_formula (S-learner)" %in% estimator) {
+    # G-formula estimate from RISCA
+    ATE_RISCA_gf <- tryCatch({
+      RISCA_gf(data, X.names.outcome, tau = tau)
+    }, error = function(e) {
+      message("Error in ATE_RISCA_gf: ", e$message)
+      return(NA) 
+    })
+    results <- rbind(results, data.frame(
+      "sample.size" = sample.size, "estimate" = ATE_RISCA_gf, 
+      "estimator" = "RISCA - G_formula (S-learner)", 
+      "nuisance" = "Cox"
+    ))
+  }
+  return(results)
+}
+
+
+# Function to compute estimators for multiple simulations and sample sizes
+compute_estimator <- function(n_sim, tau, scenario = "RCT1", 
+                              X.names.propensity, 
+                              X.names.outcome,
+                              X.names.censoring,
+                              nuisance_propensity = "glm", 
+                              nuisance_censoring = "cox", 
+                              nuisance_survival = "cox", 
+                              n.folds_propensity = NULL,
+                              n.folds_censoring = NULL, 
+                              n.folds_survival = NULL, 
+                              coefC = NULL, 
+                              parsC = NULL,
+                              parsC_A = NULL,
+                              estimator = "all",
+                              sample_sizes = c(500, 1000, 2000, 4000, 8000)) {
+  
+  pb_n <- txtProgressBar(min = 0, max = length(sample_sizes), 
+                         style = 3, initial = 0, char = "#")
+  on.exit(close(pb_n))
+  
+  results <- data.frame(
+    "sample.size" = numeric(),
+    "estimate" = numeric(),
+    "estimator" = character(),
+    "nuisance" = character()
+  )
+  
+  # Loop through each sample size
+  for (idx_n in seq_along(sample_sizes)) {
+    n <- sample_sizes[idx_n]
+    
+    # Progress bar for simulations
+    pb <- txtProgressBar(min = 0, max = n_sim, style = 3, initial = 0, char = "#")
+    on.exit(close(pb))
+    
+    # Loop through each simulation
+    for (i in 1:n_sim) {
+      setTxtProgressBar(pb, i)
+      
+      # Simulate data based on the scenario
+      if (scenario == "RCT1") {
+        data <- simulate_data_RCT(n, tau = tau, 
+                                  scenario = "RCT1")
+      } else if (scenario == "RCT2") {
+        data <- simulate_data_RCT(n, tau = tau, 
+                                  scenario = "RCT2", 
+                                  coefC = coefC, 
+                                  parsC = parsC,
+                                  parsC_A = parsC_A)
+      } else if (scenario == "Obs1") {
+        data <- simulate_data_obs(n, tau = tau, 
+                                  scenario = "Obs1")
+      } else if (scenario == "Obs2") {
+        data <- simulate_data_obs(n, tau = tau, 
+                                  scenario = "Obs2", 
+                                  coefC = coefC, 
+                                  parsC = parsC)
+      } else if (scenario == "Complex") {
+        data <- simulate_data_complex(n, 
+                                      tau = tau,
+                                      parsC = parsC)
+      } else if (scenario == "Mis") {
+        data <- simulate_data_mis(n, tau = tau)
+      }
+      
+      
+      # Compute all estimates for the simulated data
+      all <- all_estimates(data, n, tau = tau, 
+                           X.names.propensity, 
+                           X.names.outcome,
+                           X.names.censoring,
+                           nuisance_propensity, 
+                           nuisance_censoring,
+                           nuisance_survival, 
+                           n.folds_propensity = n.folds_propensity, 
+                           n.folds_censoring = n.folds_censoring, 
+                           n.folds_survival = n.folds_survival,
+                           estimator)
+      results <- rbind(all, results)
+    }
+    
+    close(pb)
+    setTxtProgressBar(pb_n, idx_n)
+  }
+  
+  return(results)
+}
+
+```
+
+### RCT with independent censoring
+
+```{r, eval = params$run_simulations}
+# Number of simulations and tau value
+n_sim <- 100
+tau <- 25
+
+# RCT1 simulation
+simulation_rct1 <- compute_estimator(
+      n_sim, tau = tau, scenario = "RCT1", 
+      X.names.propensity = c("X1", "X2", "X3", "X4"), 
+      X.names.outcome = c("X1", "X2", "X3", "X4"),
+      X.names.censoring = c("X1", "X2", "X3", "X4"),
+      nuisance_propensity = c("glm", "probability forest"), 
+      nuisance_censoring = c("cox", "survival forest"), 
+      nuisance_survival = c("cox", "survival forest"), 
+      n.folds_propensity = 5,
+      n.folds_censoring = 5,
+      n.folds_survival = 5,
+      coefC = 0.03
+)
+save(simulation_rct1, file = "user_runs/simulation_rct1.RData")
+
+```
+
+```{r , eval = !params$run_simulations}
+load("results/simulation_rct1.RData")
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+# Update the theme to center the plot title
+theme_update(plot.title = element_text(hjust = 0.5))
+
+# Define the desired order of the estimators
+
+desired_order <- c(
+  "Naive",
+  "KM",
+  "SurvRM2 - KM",
+  "IPTW KM (Log. Reg.)",
+  "RISCA - IPTW KM (Log. Reg.)",
+  "IPCW KM (Cox)",
+  "BJ (Cox)",
+  "IPTW-BJ (Cox & Log. Reg.)",
+  "IPTW-IPCW KM (Cox & Log. Reg.)",
+  "G-formula (Cox/ T-learners)",
+  "G-formula (Cox/ S-learner)",
+  "RISCA - G_formula (S-learner)",
+  "AIPTW-AIPCW (Cox & Cox & Log. Reg.)",
+  "grf - Causal Survival Forest",
+  "IPTW KM (Forest)",
+  "RISCA - IPTW KM (Forest)",
+  "IPCW KM (Forest)",
+  "BJ (Forest)",
+  "IPTW-BJ (Forest)",
+  "IPTW-IPCW KM (Forest)",
+  "G-formula (Forest/ T-learners)",
+  "G-formula (Forest/ S-learner)",
+  "AIPTW-AIPCW (Forest)")
+
+# Convert sample size to a factor with levels sorted in decreasing order
+simulation_rct1$sample.size <- factor(
+  simulation_rct1$sample.size, 
+  levels = sort(unique(simulation_rct1$sample.size), decreasing = FALSE)
+)
+
+# Convert estimator column to a factor with the specified order
+simulation_rct1$estimator <- factor(simulation_rct1$estimator, 
+                                    levels = desired_order)
+
+# Create the plot for RCT + independent censoring
+simulation_graph_rct1 <- simulation_rct1 %>%
+  ggplot(aes(
+    x = estimator, y = estimate,  
+    fill = factor(sample.size, levels = rev(levels(sample.size)))
+  )) +
+  scale_fill_brewer(palette = "Accent") +
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Change x-axis label
+  ylab("ATE") +  # Change y-axis label
+  stat_boxplot(geom = "errorbar") +
+  geom_hline(
+    yintercept = truth_tau1, linetype = "dashed", color = "red", 
+    alpha = 0.8, size = 0.8
+  ) +
+theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 18),
+    axis.text.x = element_text(angle = 35, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 16, face = "bold"),
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0, 15))
+  
+```
+
+```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
+#| label: fig-rct1
+#| fig-cap: "Results of the ATE for the simulation of a RCT with independent censoring."
+#| warning: false
+simulation_graph_rct1 
+```
+
+
+### RCT with dependent censoring
+
+```{r, eval = params$run_simulations}
+# RCT2 simulation with specific coefficients and parameters
+simulation_rct2 <- compute_estimator(
+  n_sim, tau = tau, scenario = "RCT2", 
+  X.names.propensity = c("X1", "X2", "X3", "X4"), 
+  X.names.outcome = c("X1", "X2", "X3", "X4"),
+  X.names.censoring = c("X1", "X2", "X3", "X4"),
+  nuisance_propensity = c("glm", "probability forest"), 
+  nuisance_censoring = c("cox", "survival forest"), 
+  nuisance_survival = c("cox", "survival forest"), 
+  n.folds_propensity = 5,
+  n.folds_censoring = 5,
+  n.folds_survival = 5,
+  coefC = 0.03, 
+  parsC = c(0.7, 0.3, -0.25, -0.1), 
+  parsC_A = 0
+)
+save(simulation_rct2, file = "user_runs/simulation_rct2.RData")
+
+```
+
+```{r , eval = !params$run_simulations}
+load("results/simulation_rct2.RData")
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+# Update the theme to center the plot title
+theme_update(plot.title = element_text(hjust = 0.5))
+
+
+# Convert sample size to a factor with levels sorted in decreasing order
+simulation_rct2$sample.size <- factor(
+  simulation_rct2$sample.size, 
+  levels = sort(unique(simulation_rct2$sample.size), decreasing = TRUE)
+)
+
+# Convert estimator column to a factor with the specified order
+simulation_rct2$estimator <- factor(simulation_rct2$estimator, 
+                                    levels = desired_order)
+
+# Create the plot for RCT + dependent censoring
+simulation_graph_rct2 <- simulation_rct2 %>%
+  ggplot(aes(
+    x = estimator, y = estimate,  
+    fill = factor(sample.size, levels = rev(levels(sample.size)))
+  )) +
+  scale_fill_brewer(palette = "Accent") +
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Change x-axis label
+  ylab("ATE") +  # Change y-axis label
+  stat_boxplot(geom = "errorbar") +
+  geom_hline(
+    yintercept = truth_tau2, linetype = "dashed", color = "red", 
+    alpha = 0.8, size = 0.8
+  ) +
+  theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 18),
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 16, face = "bold"),
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) + 
+  coord_cartesian(ylim = c(0, 15))
+```
+
+```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
+#| label: fig-rct2
+#| fig-cap: "Estimation results of the ATE for the simulation of a RCT with dependent censoring."
+#| warning: false
+simulation_graph_rct2
+```
+
+## Observational study simulations
+
+
+### Descriptive analysis  
+```{r   message=FALSE, warning=FALSE}
+# Observational data with no informative censoring
+data_obs1 <- simulate_data_obs(n = 2000, tau = 25, scenario = "Obs1")
+
+# Observational data simulation with dependent censoring
+data_obs2 <- simulate_data_obs(n = 2000, tau = 25, scenario = "Obs2", 
+                               coefC = 0.03, parsC = c(0.7,0.3,-0.25,-0.1))
+
+```
+
+```{r   message=FALSE, warning=FALSE}
+# Stratification by treatment 
+group_0 <- data_obs1 %>%
+  dplyr:: filter(A == 0)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,T_tild=T_obs)
+
+group_1 <- data_obs1 %>%
+  dplyr:: filter(A == 1)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,T_tild=T_obs)
+
+# Summary statistics
+summary_group_0 <- summary(group_0)
+summary_group_1 <- summary(group_1)
+
+print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
+print(summary_group_0)
+
+print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
+print(summary_group_1)
+
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+# Stratification by treatment 
+group_0 <- data_obs2 %>%
+  dplyr:: filter(A == 0)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,status_tau,T_obs,e)
+
+group_1 <- data_obs2 %>%
+  dplyr:: filter(A == 1)%>%
+  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status,status_tau,T_obs,e)
+
+# Summary statistics
+summary_group_0 <- summary(group_0)
+summary_group_1 <- summary(group_1)
+
+print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
+print(summary_group_0)
+
+print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
+print(summary_group_1)
+
+```
+
+```{r}
+# Simulation for scenario Obs1
+data_Obs1 <- simulate_data_obs(n = 100000, tau = 25, scenario = "Obs1")
+
+#plot_ground_truth(data_Obs1, 
+#                  vec_tau, 
+#                  tau, 
+#                  c(0, 10),
+#                  "True difference in RMST for Obs #scenario 1")
+
+truth_tau3 <-  ground_truth(data_Obs1, tau = 25)
+print(paste0("The ground truth for Obs scenario 1 at time 25 is ", round(truth_tau3, 1)))
+
+# Simulation for scenario Obs2 with specific coefficients and parameters
+data_Obs2 <- simulate_data_obs(
+  n = 100000, tau = tau, scenario = "Obs2", 
+  coefC = 0.03, parsC = c(0.7, 0.3, -0.25, -0.1))
+
+#plot_ground_truth(data_Obs2, 
+#                  vec_tau, 
+#                  tau, 
+#                  c(0, 10),
+#                  "True difference in RMST for Obs #scenario 2")
+
+truth_tau4 <- ground_truth(data_Obs2, tau = 25)
+print(paste0("The ground truth for Obs scenario 2 at #time 25 is ", round(truth_tau4, 1)))
+```
+
+### Observational study with independent censoring 
+
+```{r, eval = params$run_simulations}
+# Obs1 simulation
+simulation_obs1 <- compute_estimator(
+  n_sim, tau = tau, scenario = "Obs1", 
+  X.names.propensity = c("X1", "X2", "X3", "X4"), 
+  X.names.outcome = c("X1", "X2", "X3", "X4"),
+  X.names.censoring = c("X1", "X2", "X3", "X4"),
+  nuisance_propensity = c("glm", "probability forest"), 
+  nuisance_censoring = c("cox", "survival forest"), 
+  nuisance_survival = c("cox", "survival forest"), 
+  n.folds_propensity = 5,
+  n.folds_censoring = 5,
+  n.folds_survival = 5,
+  coefC = 0.03
+)
+save(simulation_obs1, file = "user_runs/simulation_obs1.RData")
+```
+
+```{r, eval = !params$run_simulations}
+load("results/simulation_obs1.RData")
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+# Update the theme to center the plot title
+theme_update(plot.title = element_text(hjust = 0.5))
+
+# Convert sample size to a factor with levels sorted in decreasing order
+simulation_obs1$sample.size <- factor(
+  simulation_obs1$sample.size, 
+  levels = sort(unique(simulation_obs1$sample.size), decreasing = TRUE)
+)
+
+# Convert estimator column to a factor with the specified order
+simulation_obs1$estimator <- factor(simulation_obs1$estimator, 
+                                    levels = desired_order)
+
+# Create the plot for Observational + independent censoring
+simulation_graph_obs1 <- simulation_obs1 %>%
+  ggplot(aes(
+    x = estimator, y = estimate,  
+    fill = factor(sample.size, levels = rev(levels(sample.size)))
+  )) +
+  scale_fill_brewer(palette = "Accent") +
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Change x-axis label
+  ylab("ATE") +  # Change y-axis label
+  stat_boxplot(geom = "errorbar") +
+  geom_hline(
+    yintercept = truth_tau3, linetype = "dashed", color = "red", 
+    alpha = 0.8, size = 0.8
+  ) +
+  theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 18),
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 16, face = "bold"),
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) + 
+  coord_cartesian(ylim = c(0, 15))
+
+```
+
+```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
+#| label: fig-obs1
+#| fig-cap: "Estimation results of the ATE for the simulation of an observational study with independent censoring."
+#| warning: false
+simulation_graph_obs1
+```
+
+### Observational study with dependent censoring 
+
+```{r, eval = params$run_simulations}
+# Obs2 simulation with specific coefficients and parameters
+simulation_obs2 <- compute_estimator(
+  n_sim, tau = tau, scenario = "Obs2", 
+  X.names.propensity = c("X1", "X2", "X3", "X4"), 
+  X.names.outcome = c("X1", "X2", "X3", "X4"),
+  X.names.censoring = c("X1", "X2", "X3", "X4"),
+  nuisance_propensity = c("glm", "probability forest"), 
+  nuisance_censoring = c("cox", "survival forest"), 
+  nuisance_survival = c("cox", "survival forest"), 
+  n.folds_propensity = 5,
+  n.folds_censoring = 5,
+  n.folds_survival = 5,
+  coefC = 0.03, 
+  parsC = c(0.7, 0.3, -0.25, -0.1)
+)
+save(simulation_obs2, file = "user_runs/simulation_obs2.RData")
+```
+
+```{r , eval = !params$run_simulations}
+load("results/simulation_obs2.RData")
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+# Update the theme to center the plot title
+theme_update(plot.title = element_text(hjust = 0.5))
+
+# Convert sample size to a factor with levels sorted in decreasing order
+simulation_obs2$sample.size <- factor(
+  simulation_obs2$sample.size, 
+  levels = sort(unique(simulation_obs2$sample.size), decreasing = TRUE)
+)
+
+# Convert estimator column to a factor with the specified order
+simulation_obs2$estimator <- factor(simulation_obs2$estimator, 
+                                    levels = desired_order)
+
+# Create the plot for Observational + dependent censoring
+simulation_graph_obs2 <- simulation_obs2 %>%
+  ggplot(aes(
+    x = estimator, y = estimate,  
+    fill = factor(sample.size, levels = rev(levels(sample.size)))
+  )) +
+  scale_fill_brewer(palette = "Accent") +
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Change x-axis label
+  ylab("ATE") +  # Change y-axis label
+  stat_boxplot(geom = "errorbar") +
+  geom_hline(
+    yintercept = truth_tau4, linetype = "dashed", color = "red", 
+    alpha = 0.8, size = 0.8
+  ) +
+  theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 18),
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 16, face = "bold"),
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) + 
+  coord_cartesian(ylim = c(0, 15))
+
+```
+
+```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
+#| label: fig-obs2
+#| fig-cap: "Estimation results of the ATE for the simulation of an observational study with dependent censoring."
+#| warning: false
+simulation_graph_obs2
+```
+
+## Misspecification of the nuisance components simulations
+
+
+```{r}
+# Function to estimate RMST for each misspecification context
+compute_estimator_mispec <- function(n_sim, tau, 
+                                     X.names.propensity_mis, 
+                                     X.names.propensity, 
+                                     X.names.outcome,
+                                     X.names.outcome_mis,
+                                     X.names.censoring,
+                                     X.names.censoring_mis,
+                                     nuisance_propensity = "glm", 
+                                     nuisance_censoring = "cox", 
+                                     nuisance_survival = "cox", 
+                                     n.folds_propensity = NULL,
+                                     n.folds_censoring = NULL, 
+                                     n.folds_survival = NULL,
+                                     estimator = "all",
+                                     sample_sizes = c(8000)) {
+  
+  pb_n <- txtProgressBar(min = 0, max = length(sample_sizes) * n_sim, 
+                         style = 3, initial = 0, char = "#")
+  on.exit(close(pb_n))
+  
+  # Initialize data frame for each misspecification
+  simulation_mis <- data.frame()
+  simulation_mistreat <- data.frame()
+  simulation_misout <- data.frame()
+  simulation_miscens <- data.frame()
+  simulation_mistreat_out <- data.frame()
+  simulation_miscens_out <- data.frame()
+  simulation_mistreat_cens <- data.frame()
+  simulation_misall <- data.frame()
+
+  # Function to compute estimators for multiple simulations and sample sizes
+  for (n in sample_sizes) {
+    for (i in 1:n_sim) {
+      setTxtProgressBar(pb_n, (which(sample_sizes == n) - 1) * n_sim + i)
+      data <- simulate_data_mis(n, tau = tau)
+
+      # Compute all estimates for the simulated data
+      res_all_mis <- all_estimates(data, n, tau = tau, 
+                                   X.names.propensity = X.names.propensity, 
+                                   X.names.outcome = X.names.outcome,
+                                   X.names.censoring = X.names.censoring,
+                                   nuisance_propensity = nuisance_propensity, 
+                                   nuisance_censoring = nuisance_censoring,
+                                   nuisance_survival = nuisance_survival, 
+                                   n.folds_propensity = n.folds_propensity, 
+                                   n.folds_censoring = n.folds_censoring, 
+                                   n.folds_survival = n.folds_survival,
+                                   estimator)
+      
+      res_all_mistreat <- all_estimates(data, n, tau = tau, 
+                                        X.names.propensity = X.names.propensity_mis, 
+                                        X.names.outcome = X.names.outcome,
+                                        X.names.censoring = X.names.censoring,
+                                        nuisance_propensity = nuisance_propensity,
+                                        nuisance_censoring = nuisance_censoring,
+                                        nuisance_survival = nuisance_survival,  
+                                        n.folds_propensity = n.folds_propensity, 
+                                        n.folds_censoring = n.folds_censoring, 
+                                        n.folds_survival = n.folds_survival,
+                                        estimator)
+      
+      res_all_misout <- all_estimates(data, n, tau = tau, 
+                                      X.names.propensity = X.names.propensity, 
+                                      X.names.outcome = X.names.outcome_mis,
+                                      X.names.censoring = X.names.censoring,
+                                      nuisance_propensity = nuisance_propensity,
+                                      nuisance_censoring = nuisance_censoring,
+                                      nuisance_survival = nuisance_survival,  
+                                      n.folds_propensity = n.folds_propensity, 
+                                      n.folds_censoring = n.folds_censoring, 
+                                      n.folds_survival = n.folds_survival,
+                                      estimator)
+      
+      res_all_miscens <- all_estimates(data, n, tau = tau, 
+                                       X.names.propensity = X.names.propensity, 
+                                       X.names.outcome = X.names.outcome,
+                                       X.names.censoring = X.names.censoring_mis,
+                                       nuisance_propensity = nuisance_propensity,
+                                       nuisance_censoring = nuisance_censoring,
+                                       nuisance_survival = nuisance_survival,  
+                                       n.folds_propensity = n.folds_propensity, 
+                                       n.folds_censoring = n.folds_censoring, 
+                                       n.folds_survival = n.folds_survival,
+                                       estimator)
+      
+      res_all_mistreat_out <- all_estimates(data, n, tau = tau, 
+                                            X.names.propensity = X.names.propensity_mis, 
+                                            X.names.outcome = X.names.outcome_mis,
+                                            X.names.censoring = X.names.censoring,
+                                            nuisance_propensity = nuisance_propensity,
+                                            nuisance_censoring = nuisance_censoring,
+                                            nuisance_survival = nuisance_survival,
+                                            n.folds_propensity = n.folds_propensity, 
+                                            n.folds_censoring = n.folds_censoring, 
+                                            n.folds_survival = n.folds_survival,
+                                            estimator)
+      
+      res_all_miscens_out <- all_estimates(data, n, tau = tau, 
+                                           X.names.propensity = X.names.propensity, 
+                                           X.names.outcome = X.names.outcome_mis,
+                                           X.names.censoring = X.names.censoring_mis,
+                                           nuisance_propensity = nuisance_propensity,
+                                           nuisance_censoring = nuisance_censoring,
+                                           nuisance_survival = nuisance_survival,
+                                           n.folds_propensity = n.folds_propensity, 
+                                           n.folds_censoring = n.folds_censoring, 
+                                           n.folds_survival = n.folds_survival,
+                                           estimator)
+      
+      res_all_mistreat_cens <- all_estimates(data, n, tau = tau, 
+                                             X.names.propensity = X.names.propensity_mis, 
+                                             X.names.outcome = X.names.outcome,
+                                             X.names.censoring = X.names.censoring_mis,
+                                             nuisance_propensity = nuisance_propensity,
+                                             nuisance_censoring = nuisance_censoring,
+                                             nuisance_survival = nuisance_survival,
+                                             n.folds_propensity = n.folds_propensity, 
+                                             n.folds_censoring = n.folds_censoring, 
+                                             n.folds_survival = n.folds_survival,
+                                             estimator)
+      
+      res_all_misall <- all_estimates(data, n, tau = tau, 
+                                      X.names.propensity = X.names.propensity_mis, 
+                                      X.names.outcome = X.names.outcome_mis,
+                                      X.names.censoring = X.names.censoring_mis,
+                                      nuisance_propensity = nuisance_propensity,
+                                      nuisance_censoring = nuisance_censoring,
+                                      nuisance_survival = nuisance_survival,
+                                      n.folds_propensity = n.folds_propensity, 
+                                      n.folds_censoring = n.folds_censoring, 
+                                      n.folds_survival = n.folds_survival,
+                                      estimator)
+      
+      # Store the results
+      simulation_mis <- rbind(simulation_mis, res_all_mis)
+      simulation_mistreat <- rbind(simulation_mistreat, res_all_mistreat)
+      simulation_misout <- rbind(simulation_misout, res_all_misout)
+      simulation_miscens <- rbind(simulation_miscens, res_all_miscens)
+      simulation_mistreat_out <- rbind(simulation_mistreat_out, res_all_mistreat_out)
+      simulation_miscens_out <- rbind(simulation_miscens_out, res_all_miscens_out)
+      simulation_mistreat_cens <- rbind(simulation_mistreat_cens, res_all_mistreat_cens)
+      simulation_misall <- rbind(simulation_misall, res_all_misall)
+    }
+  }
+  
+  # Fusion of dataframe
+  return(list(
+    simulation_mis = simulation_mis,
+    simulation_mistreat = simulation_mistreat,
+    simulation_misout = simulation_misout,
+    simulation_miscens = simulation_miscens,
+    simulation_mistreat_out = simulation_mistreat_out,
+    simulation_miscens_out = simulation_miscens_out,
+    simulation_mistreat_cens = simulation_mistreat_cens,
+    simulation_misall = simulation_misall
+  ))
+}
+```
+
+### Descriptive analysis
+
+```{r   message=FALSE, warning=FALSE}
+mis <- simulate_data_mis(n=2000,tau=0.5)
+summary(mis)
+```
+
+```{r   message=FALSE, warning=FALSE}
+# Stratification by treatment 
+group_0 <- mis %>%
+  dplyr:: filter(A == 0)%>%
+  dplyr:: select(X1,X2,X3,C,T1,T0,status,T_obs,status_tau,e)
+
+group_1 <- mis %>%
+  dplyr:: filter(A == 1)%>%
+  dplyr:: select(X1,X2,X3,C,T1,T0,status,T_obs,status_tau,e)
+
+# Summary statistics
+summary_group_0 <- summary(group_0)
+summary_group_1 <- summary(group_1)
+
+print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
+print(summary_group_0)
+
+print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
+print(summary_group_1)
+
+```
+
+```{r}
+# Mis scenario 
+tau_mis <- 0.5
+vec_tau_complex <- seq(0, 10, by = 0.05)
+data_mis <- simulate_data_mis(n = 150000, tau = tau_mis)
+
+#plot_ground_truth(data_mis,
+#                  vec_tau_complex, 
+#                  tau_mis, 
+#                  c(0, 1), 
+#                  "True difference in RMST for Mis scenario")
+
+truth_complex_mis <- ground_truth(data_mis, tau = tau_mis)
+
+print(paste0("The ground truth for mis scenario at time 0.45 is ", round(truth_complex_mis,2)))
+```
+
+### Observational study with dependent censoring without misspecification
+
+```{r, eval = params$run_simulations}
+n_sim <- 100
+tau <- 0.5
+simulation_mis <- compute_estimator(
+  n_sim, tau = tau, scenario = "Mis", 
+  X.names.propensity = c("I(X1^2)", "I(X2^2)","I(X3^2)", "I(X4^2)", 
+                         "X1*X2","X1*X4"),
+  X.names.outcome = c("I(X1^2)", "I(X2^2)","I(X3^2)", "I(X4^2)", 
+                      "X1:X2", "X3:X4"),
+  X.names.censoring = c("I(X1^2)", "I(X2^2)","I(X3^2)", "I(X4^2)", 
+                        "X1:X3", "X2:X4"),
+  nuisance_propensity = c("glm"), 
+  nuisance_censoring = c("cox"), 
+  nuisance_survival = c("cox"), 
+  n.folds_propensity = NULL,
+  n.folds_censoring = NULL,
+  n.folds_survival = NULL,
+  sample_sizes = c(500, 1000, 2000, 4000, 8000),
+  estimator = c("Naive", "KM", "IPTW KM", "IPCW KM", "BJ", 
+                "IPTW-IPCW KM", "IPTW-BJ", "G_formula (T-learners)", 
+                "G_formula (S-learner)", "AIPTW-AIPCW")
+)
+save(simulation_mis, file="user_runs/simulation_mis.RData") 
+
+simulation_mis_c <- compute_estimator(
+  n_sim, tau = tau, scenario = "Mis", 
+  X.names.propensity = c("X1","X2","X3","X4"),
+  X.names.outcome = c("X1","X2","X3","X4"),
+  X.names.censoring = c("X1","X2","X3","X4"),
+  nuisance_propensity = c("probability forest"), 
+  nuisance_censoring = c("survival forest"), 
+  nuisance_survival = c("survival forest"), 
+  n.folds_propensity = 5,
+  n.folds_censoring = 5,
+  n.folds_survival = 5,
+  sample_sizes = c(500, 1000, 2000, 4000, 8000),
+  estimator = c("IPTW KM", "IPCW KM", "BJ", 
+                "IPTW-IPCW KM", "IPTW-BJ", "G_formula (T-learners)", 
+                "G_formula (S-learner)", "AIPTW-AIPCW",
+                "grf - Causal Survival Forest")
+)
+
+save(simulation_mis_c, file="user_runs/simulation_mis_c.RData") 
+
+simulation_mis_c_16000 <- compute_estimator(
+  n_sim, tau = tau, scenario = "Mis", 
+  X.names.propensity = c("X1","X2","X3","X4"),
+  X.names.outcome = c("X1","X2","X3","X4"),
+  X.names.censoring = c("X1","X2","X3","X4"),
+  nuisance_propensity = c("probability forest"), 
+  nuisance_censoring = c("survival forest"), 
+  nuisance_survival = c("survival forest"), 
+  n.folds_propensity = 5,
+  n.folds_censoring = 5,
+  n.folds_survival = 5,
+  sample_sizes = 16000,
+  estimator = c("IPTW KM", "G_formula (T-learners)")
+)
+save(simulation_mis_c_16000, file="user_runs/simulation_mis_c_16000.RData")  
+```
+
+
+```{r , eval = !params$run_simulations}
+load("results/simulation_mis.RData")
+load("results/simulation_mis_c.RData")
+load("results/simulation_mis_c_16000.RData")
+```
+
+```{r   message=FALSE, warning=FALSE}
+# Define the desired order of the estimators
+simulation_mis2 <- rbind(simulation_mis,simulation_mis_c)
+simulation_mis2 <- rbind(simulation_mis2,simulation_mis_c_16000)
+
+desired_order <- c(
+  "Naive",
+  "KM",
+  "SurvRM2 - KM",
+  "IPTW KM (Log. Reg.)",
+  "IPCW KM (Cox)",
+  "BJ (Cox)",
+  "IPTW-BJ (Cox & Log. Reg.)",
+  "IPTW-IPCW KM (Cox & Log. Reg.)",
+  "G-formula (Cox/ T-learners)",
+  "G-formula (Cox/ S-learner)",
+  "AIPTW-AIPCW (Cox & Cox & Log. Reg.)",
+  "grf - Causal Survival Forest",
+  "IPTW KM (Forest)",
+  "IPCW KM (Forest)",
+  "BJ (Forest)",
+  "IPTW-BJ (Forest)",
+  "IPTW-IPCW KM (Forest)",
+  "G-formula (Forest/ T-learners)",
+  "G-formula (Forest/ S-learner)",
+  "AIPTW-AIPCW (Forest)")
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_mis2$sample.size <- factor(simulation_mis2$sample.size, 
+                                      levels = sort(unique(simulation_mis2$sample.size), 
+                                                    decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_mis2$estimator <- factor(simulation_mis2$estimator, levels = desired_order)
+
+simulation_graph_mis <- simulation_mis2 %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, 
+                                                         levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("No misspecification:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Changer le label de l'axe x
+  ylab("ATE") +  # Retirer le label de l'axe y
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Changer geom_hline en geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(size = 15, angle = 45, vjust = 1, hjust = 1),
+          axis.text.y = element_text(size = 15),
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+
+```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
+#| label: fig-mis3
+#| fig-cap: "Estimation results of the ATE for the simulation of an observational study with dependent censoring and non linear relationships."
+#| warning: false
+simulation_graph_mis
+```
+
+### Observational study with dependent censoring with misspecification of one component
+
+```{r , eval = params$run_simulations}
+n_sim <- 100
+tau <- 0.5
+mis <- compute_estimator_mispec(n_sim, tau = tau, 
+                                   X.names.propensity = c("I(X1^2)", "I(X2^2)",
+                                                          "I(X3^2)", "I(X4^2)", 
+                                                          "X1*X2","X1*X4"),
+                                   X.names.outcome = c("I(X1^2)", "I(X2^2)",
+                                                       "I(X3^2)", "I(X4^2)", 
+                                                       "X1:X2", "X3:X4"),
+                                   X.names.censoring = c("I(X1^2)", "I(X2^2)",
+                                                         "I(X3^2)", "I(X4^2)", 
+                                                         "X1:X3", "X2:X4"),
+                                   X.names.propensity_mis = c("I(X1^2)","I(X2^2)",
+                                                              "I(X3^2)", "I(X4^2)"),
+                                   X.names.outcome_mis = c("I(X1^2)", "I(X2^2)",
+                                                           "I(X3^2)", "I(X4^2)"),
+                                   X.names.censoring_mis = c("I(X1^2)", "I(X2^2)",
+                                                             "I(X3^2)", "I(X4^2)"),
+                                   nuisance_propensity = c("glm"), 
+                                   nuisance_censoring = c("cox"), 
+                                   nuisance_survival = c("cox"),
+                                   estimator = estimators,
+                                   sample_size = 8000)
+
+
+# Initialize a list to decompose the results
+merged_results <- list()
+
+# All the defined sceanario
+scenarios <- c("simulation_mis", "simulation_mistreat", "simulation_misout",
+               "simulation_miscens", "simulation_mistreat_out", 
+               "simulation_miscens_out", "simulation_mistreat_cens", 
+               "simulation_misall")
+
+# Loop through all scenarios
+for (s in scenarios) {
+  # Initialize an empty dataframe
+  scenario_results <- data.frame()
+  
+  # Loop through all sample sizes
+  for (i in seq_along(sample_sizes)) {
+    # Append the results for the given scenario and sample size 
+    scenario_results <- rbind(scenario_results, results[[i]][[s]])
+  }
+  
+  # Add the results for the given scenario to the results list 
+  merged_results[[s]] <- scenario_results
+  
+  # Save the final results for the given scenario in an .RData file
+  assign(paste0(s), scenario_results)
+  save(list = paste0(s), file = sprintf("user_runs/%s.RData", s))
+}
+```
+
+```{r , eval = !params$run_simulations}
+load("results/simulation_mis2.RData")
+load("results/simulation_mistreat.RData")
+load("results/simulation_miscens.RData")
+load("results/simulation_misout.RData")
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+# Define the desired order of the estimators
+desired_order_mis <- c(
+  "Naive", "KM",
+"IPTW KM (Log. Reg.)",
+  "IPCW KM (Cox)", "BJ (Cox)",  "IPTW-BJ (Cox & Log. Reg.)", 
+"IPTW-IPCW KM (Cox & Log. Reg.)",
+  "G-formula (Cox/ T-learners)", "G-formula (Cox/ S-learner)",
+  "AIPTW-AIPCW (Cox & Cox & Log. Reg.)"
+)
+
+simulation_mis2 <- simulation_mis2[simulation_mis2$estimator %in% desired_order_mis, ]
+
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_mis2$sample.size <- factor(simulation_mis2$sample.size, 
+                                      levels = sort(unique(simulation_mis2$sample.size), 
+                                                    decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_mis2$estimator <- factor(simulation_mis2$estimator, levels = desired_order)
+
+simulation_graph_mis2 <- simulation_mis2 %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, 
+                                                         levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("No misspecification:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +
+  ylab("ATE") + 
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Change geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+```{r   message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_mistreat$sample.size <- factor(simulation_mistreat$sample.size, levels = sort(unique(simulation_mistreat$sample.size), decreasing = TRUE))
+
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_mistreat$estimator <- factor(simulation_mistreat$estimator, levels = desired_order_mis)
+
+simulation_graph_mis_mistreat <- simulation_mistreat %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of treatment model:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  
+  ylab("ATE") + 
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Changer geom_hline en geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_miscens$sample.size <- factor(simulation_miscens$sample.size, levels = sort(unique(simulation_miscens$sample.size), decreasing = TRUE))
+
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_miscens$estimator <- factor(simulation_miscens$estimator, levels = desired_order_mis)
+
+simulation_graph_mis_miscens <- simulation_miscens %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of censoring model:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +
+  ylab("ATE") +
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Change geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_misout$sample.size <- factor(simulation_misout$sample.size, levels = sort(unique(simulation_misout$sample.size), decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_misout$estimator <- factor(simulation_misout$estimator, levels = desired_order_mis)
+
+simulation_graph_mis_misout <- simulation_misout %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of outcome model:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") + 
+  ylab("ATE") + 
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Changer geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+
+```{r fig.width=25, fig.height=25, message=FALSE, warning=FALSE}
+#| label: fig-mis
+#| fig-cap: "Estimation results of the ATE for an observational study with dependent censoring in case of a single misspecification."
+#| warning: false
+grid.arrange(simulation_graph_mis2, simulation_graph_mis_miscens, simulation_graph_mis_misout, simulation_graph_mis_mistreat, ncol = 2, nrow = 2)
+```
+
+### Observational study with dependent censoring with misspecification of two components
+
+```{r , eval = !params$run_simulations}
+load("results/simulation_mistreat_out.RData")
+load("results/simulation_miscens_out.RData")
+load("results/simulation_mistreat_cens.RData")
+load("results/simulation_misall.RData")
+```
+
+```{r   message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_mistreat_out$sample.size <- factor(simulation_mistreat_out$sample.size, levels = sort(unique(simulation_mistreat_out$sample.size), decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_mistreat_out$estimator <- factor(simulation_mistreat_out$estimator, levels = desired_order_mis)
+
+simulation_graph_mis_mistreat_out <- simulation_mistreat_out %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of outcome and treatment model:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") + 
+  ylab("ATE") +
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Change geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+
+```{r   message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_miscens_out$sample.size <- factor(simulation_miscens_out$sample.size, levels = sort(unique(simulation_miscens_out$sample.size), decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_miscens_out$estimator <- factor(simulation_miscens_out$estimator, levels = desired_order_mis)
+#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+
+simulation_graph_mis_miscens_out <- simulation_miscens_out %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of censoring and outcome model:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  
+  ylab("ATE") + 
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Change geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+```{r message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_mistreat_cens$sample.size <- factor(simulation_mistreat_cens$sample.size, levels = sort(unique(simulation_mistreat_cens$sample.size), decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_mistreat_cens$estimator <- factor(simulation_mistreat_cens$estimator, levels = desired_order_mis)
+#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+
+simulation_graph_mis_mistreat_cens <- simulation_mistreat_cens %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of censoring and treatment model:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") + 
+  ylab("ATE") + 
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Change geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+```{r   message=FALSE, warning=FALSE}
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_misall$sample.size <- factor(simulation_misall$sample.size, levels = sort(unique(simulation_misall$sample.size), decreasing = TRUE))
+
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_misall$estimator <- factor(simulation_misall$estimator, levels = desired_order_mis)
+#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+
+simulation_graph_mis_all <- simulation_misall %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Misspecification of all models:  ")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") + 
+  ylab("ATE") + 
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Change geom_hline to geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0.1,0.4))
+
+```
+
+```{r fig.width=25, fig.height=25, message=FALSE, warning=FALSE}
+#| label: fig-mis2
+#| fig-cap: "Estimation results of the ATE for an observational study with dependent censoring in case of a two or more misspecifications."
+#| warning: false
+grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out, simulation_graph_mis_mistreat_cens, simulation_graph_mis_all, ncol = 2, nrow = 2)
+```
+
