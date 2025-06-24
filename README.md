@@ -88,6 +88,7 @@ quarto::quarto_render("code/main_simulations.qmd", params = list(run_simulations
 
 This will run simulations under all defined scenarios
 
+At the end, a html and pdf files will be created with the corresponding results. 
 ---
 
 ## Data Files
