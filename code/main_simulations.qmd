@@ -726,12 +726,21 @@ theme(
 ```
 
 ```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
-#| label: fig-rct1
+#| label: fig-15-rct1
 #| fig-cap: "Results of the ATE for the simulation of a RCT with independent censoring."
 #| warning: false
 simulation_graph_rct1 
 ```
+```{r}
+ggsave(
+  filename = "figures/fig-15-rct1.pdf",  # nom du fichier
+  plot = simulation_graph_rct1,            # objet graphique
+  device = "pdf",                          # format
+  width = 12, height = 8,                  # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
 
+```
 
 ### RCT with dependent censoring
 
@@ -804,10 +813,21 @@ simulation_graph_rct2 <- simulation_rct2 %>%
 ```
 
 ```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
-#| label: fig-rct2
+#| label:  fig-16-rct1
 #| fig-cap: "Estimation results of the ATE for the simulation of a RCT with dependent censoring."
 #| warning: false
 simulation_graph_rct2
+```
+
+```{r}
+ggsave(
+  filename = "figures/fig-16-rct1.pdf",  # nom du fichier
+  plot = simulation_graph_rct2,            # objet graphique
+  device = "pdf",                          # format
+  width = 12, height = 8,                  # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
+
 ```
 
 ## Observational study simulations
@@ -965,10 +985,20 @@ simulation_graph_obs1 <- simulation_obs1 %>%
 ```
 
 ```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
-#| label: fig-obs1
+#| label: fig-17-obs1
 #| fig-cap: "Estimation results of the ATE for the simulation of an observational study with independent censoring."
 #| warning: false
 simulation_graph_obs1
+```
+
+```{r}
+ggsave(
+  filename = "figures/fig-17-obs1.pdf",  # nom du fichier
+  plot = simulation_graph_obs1,            # objet graphique
+  device = "pdf",                          # format
+  width = 12, height = 8,                  # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
 ```
 
 ### Observational study with dependent censoring 
@@ -1040,10 +1070,20 @@ simulation_graph_obs2 <- simulation_obs2 %>%
 ```
 
 ```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
-#| label: fig-obs2
+#| label: fig-18-obs2
 #| fig-cap: "Estimation results of the ATE for the simulation of an observational study with dependent censoring."
 #| warning: false
 simulation_graph_obs2
+```
+
+```{r}
+ggsave(
+  filename = "figures/fig-18-obs2.pdf",  # nom du fichier
+  plot = simulation_graph_obs2,            # objet graphique
+  device = "pdf",                          # format
+  width = 12, height = 8,                  # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
 ```
 
 ## Misspecification of the nuisance components simulations
@@ -1386,10 +1426,21 @@ simulation_graph_mis <- simulation_mis2 %>%
 
 
 ```{r fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
-#| label: fig-mis3
+#| label: fig-19-mis
 #| fig-cap: "Estimation results of the ATE for the simulation of an observational study with dependent censoring and non linear relationships."
 #| warning: false
 simulation_graph_mis
+```
+
+
+```{r}
+ggsave(
+  filename = "figures/fig-19-mis.pdf",  # nom du fichier
+  plot = simulation_graph_mis,            # objet graphique
+  device = "pdf",                          # format
+  width = 12, height = 8,                  # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
 ```
 
 ### Observational study with dependent censoring with misspecification of one component
@@ -1492,12 +1543,16 @@ simulation_graph_mis2 <- simulation_mis2 %>%
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Change geom_hline to geom_vline
   theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
@@ -1521,12 +1576,16 @@ simulation_graph_mis_mistreat <- simulation_mistreat %>%
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Changer geom_hline en geom_vline
   theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
@@ -1551,13 +1610,16 @@ simulation_graph_mis_miscens <- simulation_miscens %>%
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Change geom_hline to geom_vline
   theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
-
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 ```
 
 
@@ -1579,22 +1641,36 @@ simulation_graph_mis_misout <- simulation_misout %>%
   stat_boxplot(geom="errorbar")+
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Changer geom_hline to geom_vline
-  theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+  theme(    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
 
 ```{r fig.width=25, fig.height=25, message=FALSE, warning=FALSE}
-#| label: fig-mis
+#| label: fig-20-mis2
 #| fig-cap: "Estimation results of the ATE for an observational study with dependent censoring in case of a single misspecification."
 #| warning: false
-grid.arrange(simulation_graph_mis2, simulation_graph_mis_miscens, simulation_graph_mis_misout, simulation_graph_mis_mistreat, ncol = 2, nrow = 2)
+simulation_graph_mis2 <- grid.arrange(simulation_graph_mis2, simulation_graph_mis_miscens, simulation_graph_mis_misout, simulation_graph_mis_mistreat, ncol = 2, nrow = 2)
+```
+
+```{r}
+ggsave(
+  filename = "figures/fig-20-mis2.pdf",  # nom du fichier
+  plot = simulation_graph_mis2,            # objet graphique
+  device = "pdf",                          # format
+  width = 13, height = 17,                # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
 ```
 
 ### Observational study with dependent censoring with misspecification of two components
@@ -1624,13 +1700,18 @@ simulation_graph_mis_mistreat_out <- simulation_mistreat_out %>%
   stat_boxplot(geom="errorbar")+
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Change geom_hline to geom_vline
-  theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
@@ -1654,13 +1735,18 @@ simulation_graph_mis_miscens_out <- simulation_miscens_out %>%
   stat_boxplot(geom="errorbar")+
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Change geom_hline to geom_vline
-  theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
@@ -1683,13 +1769,18 @@ simulation_graph_mis_mistreat_cens <- simulation_mistreat_cens %>%
   stat_boxplot(geom="errorbar")+
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Change geom_hline to geom_vline
-  theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
@@ -1713,20 +1804,35 @@ simulation_graph_mis_all <- simulation_misall %>%
   stat_boxplot(geom="errorbar")+
   geom_hline(yintercept = truth_complex_mis , linetype = "dashed", color = "red", alpha = 0.8,
              size = 0.8) +  # Change geom_hline to geom_vline
-  theme(legend.title = element_blank(), legend.position = "bottom",
-          legend.box = "vertical", legend.text = element_text(size=18),
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
-          axis.text = element_text(size=20, face = "bold"),
-          plot.title = element_text(size=24, face = "bold"),
-          axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.1,0.4))
+theme(
+    legend.title = element_blank(), legend.position = "bottom",
+    legend.box = "vertical", legend.text = element_text(size = 12),
+    axis.text.x = element_text(size = 15, angle = 37, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 15, face = "bold"),  # Taille augmentée ici
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) +    
+  coord_cartesian(ylim = c(0.1, 0.4))
 
 ```
 
 ```{r fig.width=25, fig.height=25, message=FALSE, warning=FALSE}
-#| label: fig-mis2
+#| label: fig-21-mis3
 #| fig-cap: "Estimation results of the ATE for an observational study with dependent censoring in case of a two or more misspecifications."
 #| warning: false
-grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out, simulation_graph_mis_mistreat_cens, simulation_graph_mis_all, ncol = 2, nrow = 2)
+simulation_graph_mis3 <- grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out, simulation_graph_mis_mistreat_cens, simulation_graph_mis_all, ncol = 2, nrow = 2)
 ```
 
+
+```{r}
+ggsave(
+  filename = "figures/fig-21-mis3.pdf",  # nom du fichier
+  plot = simulation_graph_mis3,            # objet graphique
+  device = "pdf",                          # format
+  width = 13, height = 17,                  # dimensions en pouces
+  units = "in"                             # unités (ici, pouces)
+)
+```

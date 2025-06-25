@@ -86,9 +86,14 @@ This will use the saved results to generate figures and tables
 quarto::quarto_render("code/main_simulations.qmd", execute_params = list(run_simulations = TRUE))
 ```
 
-This will run simulations under all defined scenarios
+This will run simulations under all defined scenarios.
 
-At the end, a html and pdf files will be created with the corresponding results. 
+At the end of the process, both HTML and PDF reports will be generated, containing the corresponding results. Additionally, all figures will be saved as individual .pdf files in the figures/ folder.
+
+*Note*: Figures 8 to 14 in the main text are identical to Figures 15 to 21, except that they display a selected subset of estimators for improved readability.
+
+This code generates Figures 15 to 21 only, from which the main figures are derived.
+
 ---
 
 ## Data Files
