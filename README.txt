@@ -103,7 +103,7 @@ This project relies entirely on synthetic data generated from pre-specified data
 
 - All DGPs are implemented in `code/simulate_data.R`, defining how covariates, treatment assignment, event times, and censoring are simulated.
 
-# Session Info
+## Session Info
 
 ```{r}
 sessionInfo()
