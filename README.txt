@@ -102,3 +102,30 @@ This code generates Figures 15 to 21 only, from which the main figures are deriv
 This project relies entirely on synthetic data generated from pre-specified data-generating processes (DGPs).
 
 - All DGPs are implemented in `code/simulate_data.R`, defining how covariates, treatment assignment, event times, and censoring are simulated.
+
+# Session Info
+
+```{r}
+sessionInfo()
+R version 4.4.1 (2024-06-14 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=French_France.utf8  LC_CTYPE=French_France.utf8    LC_MONETARY=French_France.utf8 LC_NUMERIC=C                  
+[5] LC_TIME=French_France.utf8    
+
+time zone: Europe/Paris
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices datasets  utils     methods   base     
+
+loaded via a namespace (and not attached):
+ [1] utf8_1.2.4        R6_2.5.1          tidyselect_1.2.1  magrittr_2.0.3    glue_1.7.0        tibble_3.2.1      pkgconfig_2.0.3  
+ [8] dplyr_1.1.4       generics_0.1.3    lifecycle_1.0.4   cli_3.6.3         fansi_1.0.6       grid_4.4.1        vctrs_0.6.5      
+[15] renv_1.0.11       compiler_4.4.1    rstudioapi_0.16.0 tools_4.4.1       pillar_1.9.0      yaml_2.3.10       rlang_1.1.4   
+```
