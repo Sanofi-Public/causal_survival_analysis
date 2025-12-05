@@ -180,11 +180,12 @@ adjusted.KM <- function(times, failures, variable, weights = NULL) {
 }
 
 
-# IPCW Kaplan-Meier estimator with restricted tau
-IPCW_Kaplan_meier <- function(data, tau, 
-                              X.names.censoring, 
-                              nuisance_censoring = "cox", 
-                              n.folds = NULL) {
+
+# IPCW estimator with restricted tau
+IPCW <- function(data, tau, 
+                 X.names.censoring, 
+                 nuisance_censoring = "cox", 
+                 n.folds = NULL) {
   
   # Compute of truncated T_obs, status and censored status
   data$T_obs_tau <- ifelse(data$T_obs >= tau, tau, data$T_obs)
@@ -201,25 +202,100 @@ IPCW_Kaplan_meier <- function(data, tau,
                                         type_of_model = nuisance_censoring,
                                         n.folds = n.folds)
   
-  # Select the probability of censoring for each observed T_obs_tau from the 
+  # Select the probability of censoring for each observe T_obs_tau from the all
   # curve
   data$S_C <- S_C_hat$S_hat[cbind(1:nrow(data), match(data$T_obs_tau, Y.grid))]
   
   # Compute IPC weights
   data$weights <- data$status_tau / data$S_C
+  data$weighted_T <- data$T_obs_tau*data$weights
   
-  # Compute the adjusted IPCW Kaplan-Meier
-  S <- adjusted.KM(times = data$T_obs, failures = data$status, 
-                   variable = data$A, weights = data$weights)
+  # Stabilized RMST 
+  intA1 <- sum(data$weighted_T[data$A==1])/(sum(data$weights[data$A==1]))
+  intA0 <- sum(data$weighted_T[data$A==0])/(sum(data$weights[data$A==0]))
   
-  # Compute differenceof RMST between the two groups
-  RMST <- RMST_1(S_A1 = S[S$variable == 1,], S_A0 = S[S$variable == 0,], tau = tau)
+  # Compute difference of RMST
+  RMST <- intA1 - intA0
+  
+  return(list(RMST = RMST,
+              intA1 = intA1,
+              intA0 = intA0,
+              weights = data$weights))
+}
+
+
+# IPCW Kaplan-Meier estimator with restricted tau
+IPCW_Kaplan_meier <- function(data,tau,
+                                   X.names.censoring,
+                                   nuisance_censoring = "cox",
+                                   n.folds = NULL){
+  
+  # Compute of truncated T_obs, status and censored status
+  data$T_obs_tau <- ifelse(data$T_obs >= tau, tau, data$T_obs)
+  data$censor.status_tau <- 1 - as.numeric((data$T_obs >= tau) | 
+                                             (data$T_obs < tau & data$status == 1))
+  data$status_tau <- as.numeric((data$T_obs >= tau) | 
+                                  (data$T_obs < tau & data$status == 1))
+  Y.grid <- sort(unique(data$T_obs_tau))
+  Y.grid <- c(0,Y.grid)
+  
+  # Estimate probability of remaining uncensored based on nuisance model 
+  S_C_hat <- estimate_survival_function(data = data, X.names = X.names.censoring,
+                                        Y.grid = Y.grid, T_obs = "T_obs_tau",
+                                        status = "censor.status_tau",
+                                        type_of_model = nuisance_censoring,
+                                        n.folds = n.folds)
+  
+  # Inverse probability weighting at each Y.grid
+  weights <- 1/S_C_hat$S_hat
+  
+  # Store times, status, treatment and weights to compute Kaplan-Meier 
+  KM <- data.frame(t = data$T_obs_tau, f = data$status_tau, v = data$A, w = weights)
+  
+  # Initialize an empty DataFrame to store the Kaplan-Meier results
+  table_KM <- data.frame(times = NULL, n.risk = NULL, n.event = NULL, 
+                         survival = NULL, variable = NULL)
+  
+  # Loop over each unique value of the stratification variable
+  for (i in unique(KM$v)) {
+    # Subset the data for the current stratification variable value
+    d <- KM[KM$v == i,]
+    
+    # Create a sorted vector of unique event times, including time 0 and the 
+    # maximum time
+    tj <- c(0, sort(unique(d$t[d$f == 1])), max(d$t))
+    
+    # Calculate the weighted number of events at the time of event
+    dj <- sapply(tj, function(x) {
+      idx <- match(x, Y.grid) 
+      sum(d[[paste0("w.", idx)]][d$t == x & d$f == 1])
+    })
+    
+    # Calculate the weighted number of individuals at risk at the time of event
+    nj <- sapply(tj, function(x) {
+      idx <- match(x, Y.grid) 
+      sum(d[[paste0("w.", idx)]][d$t >= x])
+    })
+    
+    # Compute the cumulative product for the survival probabilities
+    st <- cumprod((nj - dj) / nj)
+    
+    # Append the results to the Kaplan-Meier table
+    table_KM <- rbind(table_KM, data.frame(T = tj, n = nj, d = dj, 
+                                           S = st, variable = i))
+  }
+  
+  # Compute the difference of RMST
+  RMST <- RMST_1(S_A1 = table_KM[table_KM$variable == 1,], 
+                 S_A0 = table_KM[table_KM$variable == 0,], tau = tau)
+  
   
   return(list(RMST = RMST$RMST,
               intA1 = RMST$intA1,
               intA0 = RMST$intA0,
-              weights = data$weights))
+              weights = KM))
 }
+
 
 # Alternative code to estimate IPCW Kaplan-Meier, IPTW Kaplan-Meier or 
 # IPTW-IPCW Kaplan-Meier estimator with survival package instead of using 
@@ -384,14 +460,15 @@ g_formula_S_learner <- function(data,
   return(theta_g_formula)
 }
 
-
-IPTW_IPCW_Kaplan_meier <- function(data, 
-                                   X.names.propensity, 
-                                   X.names.censoring, 
-                                   tau,
-                                   nuisance_propensity = "glm",
-                                   nuisance_censoring = "cox",
-                                   n.folds = NULL) {
+# IPTW-IPCW estimator with restricted tau
+IPTW_IPCW <- function(data, 
+                      X.names.propensity,
+                      X.names.censoring, 
+                      tau,
+                      nuisance_propensity = "glm",
+                      nuisance_censoring = "cox",
+                      n.folds = NULL) {
+  
   # Censoring time to tau if observed time exceeds tau
   data$T_obs_tau <- ifelse(data$T_obs >= tau, tau, data$T_obs)
   
@@ -419,31 +496,116 @@ IPTW_IPCW_Kaplan_meier <- function(data,
                                         type_of_model = nuisance_censoring,
                                         n.folds = n.folds)
   
-  # Get estimated survival probabilities for censoring
+  # Select the probability of censoring for each observe T_obs_tau from the all
+  # curve
   data$S_C <- S_C_hat$S_hat[cbind(1:nrow(data), match(data$T_obs_tau, Y.grid))]
   
-  # Calculate weights
+  # Compute IPC and IPT weights
   data$weights <- data$status_tau / data$S_C * 
     (data$A * (1 / data$e_hat) + 
        (1 - data$A) * (1 / (1 - data$e_hat)))
   
-  # Compute adjusted Kaplan-Meier estimator
-  S <- adjusted.KM(times = data$T_obs, 
-                   failures = data$status, 
-                   variable = data$A, 
-                   weights = data$weights)
+  # Compute weighted observed times
+  data$weighted_T <- data$T_obs_tau*data$weights
   
   # Compute Restricted Mean Survival Time (RMST)
-  RMST <- RMST_1(S_A1 = S[S$variable == 1, ], 
-                 S_A0 = S[S$variable == 0, ],
-                 tau = tau)
+  intA1 <- sum(data$weighted_T[data$A==1])/(sum(data$weights[data$A==1]))
+  intA0 <- sum(data$weighted_T[data$A==0])/(sum(data$weights[data$A==0]))
   
-  # Return RMST and ATE for treated and not treated groups
-  return(list(RMST = RMST$RMST, ATE_treated = RMST$intA1, 
-              ATE_not_treated = RMST$intA0))
+  # Compute difference of RMST
+  RMST <- intA1 - intA0
+  
+  # Return difference of RMST and RMST for treated and not treated groups
+  return(list(RMST = RMST, ATE_treated = intA1, 
+              ATE_not_treated = intA0))
 }
 
 
+# IPTW-IPCW Kaplan-Meier estimater with restricted tau
+IPTW_IPCW_Kaplan_meier <- function(data, 
+                                   X.names.propensity, 
+                                   X.names.censoring, 
+                                   tau,
+                                   nuisance_propensity = "glm",
+                                   nuisance_censoring = "cox",
+                                   n.folds = NULL) {
+  # Censoring time to tau if observed time exceeds tau
+  data$T_obs_tau <- ifelse(data$T_obs >= tau, tau, data$T_obs)
+  
+  # Create censoring status for tau
+  data$censor.status_tau <- 1 - as.numeric((data$T_obs >= tau) | 
+                                             (data$T_obs < tau & data$status == 1))
+  
+  # Create status at tau
+  data$status_tau <- as.numeric((data$T_obs >= tau) | 
+                                  (data$T_obs < tau & data$status == 1))
+  
+  # Grid of unique observed times truncated at tau
+  Y.grid <- sort(unique(data$T_obs_tau))
+  Y.grid <- c(0,Y.grid)
+  
+  # Estimate propensity scores
+  data$e_hat <- estimate_propensity_score(data,
+                                          treatment_covariates = X.names.propensity,
+                                          type_of_model = nuisance_propensity,
+                                          n.folds = n.folds)
+  
+  # Estimate survival function for censoring
+  S_C_hat <- estimate_survival_function(data, X.names = X.names.censoring,
+                                        Y.grid = Y.grid, T_obs = "T_obs_tau",
+                                        status = "censor.status_tau",
+                                        type_of_model = nuisance_censoring,
+                                        n.folds = n.folds)
+  
+  # Calculate weights at each observed times 
+  weights <- 1 / S_C_hat$S_hat * 
+    (data$A * (1 / data$e_hat) + 
+       (1 - data$A) * (1 / (1 - data$e_hat)))
+  
+  # Store times, status, treatment and weights for Kaplan-Meier
+  KM <- data.frame(t = data$T_obs_tau, f = data$status_tau, v = data$A, w = weights)
+  
+  # Initialize an empty DataFrame to store the Kaplan-Meier results
+  table_KM <- data.frame(times = NULL, n.risk = NULL, n.event = NULL, 
+                         survival = NULL, variable = NULL)
+  
+  # Loop over each unique value of the stratification variable
+  for (i in unique(KM$v)) {
+    # Subset the data for the current stratification variable value
+    d <- KM[KM$v == i,]
+    
+    # Create a sorted vector of unique event times, including time 0 and the 
+    # maximum time
+    tj <- c(0, sort(unique(d$t[d$f == 1])), max(d$t))
+    
+    # Calculate the number of events at each time point
+    dj <- sapply(tj, function(x) {
+      idx <- match(x, Y.grid) 
+      sum(d[[paste0("w.", idx)]][d$t == x & d$f == 1])
+    })
+    
+    # Calculate the number of individuals at risk at each time point
+    nj <- sapply(tj, function(x) {
+      idx <- match(x, Y.grid) 
+      sum(d[[paste0("w.", idx)]][d$t >= x])
+    })
+    
+    # Compute the cumulative product for the survival probabilities
+    st <- cumprod((nj - dj) / nj)
+    
+    # Append the results to the Kaplan-Meier table
+    table_KM <- rbind(table_KM, data.frame(T = tj, n = nj, d = dj, 
+                                           S = st, variable = i))
+  }
+  
+  # Compute the difference of Restricted Mean Survival Time (RMST)
+  RMST <- RMST_1(S_A1 = table_KM[table_KM$variable == 1,], S_A0 = table_KM[table_KM$variable == 0,], tau = tau)
+  
+  # Return difference of RMST and RMST for treated and not treated groups
+  return(list(RMST = RMST$RMST, ATE_treated = RMST$intA1, 
+              ATE_not_treated = RMST$intA0))
+}
+  
 
 IPTW_BJ <- function(data, 
                     X.names.propensity,

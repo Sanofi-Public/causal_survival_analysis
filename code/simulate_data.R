@@ -151,7 +151,7 @@ simulate_data_obs <- function(n,
 
 # DGP for misspecification 
 simulate_data_mis <- function(n, 
-                              mu = c(0.5, 0.5, 0.7, 0.5),
+                              mu = c(0.1, 0.5, 0.7, 0.4),
                               sigma =  matrix(c(1, 0, 0, 0, 
                                                 0, 1, 0, 0, 
                                                 0, 0, 1, 0,
@@ -172,7 +172,7 @@ simulate_data_mis <- function(n,
   # Propensity score model based on X
   e <- parsA[1]*X_treatment[, "X1"]^2 + parsA[2]*X_treatment[, "X2"]^2 + 
     parsA[3]*X_treatment[, "X3"]^2 + parsA[4]*X_treatment[, "X4"]^2-
-    X_treatment[, "X1"]*X_treatment[, "X2"] +
+    X_treatment[, "X1"]*X_treatment[, "X2"] -
     X_treatment[, "X1"]*X_treatment[, "X4"]
   
   # Logistic regression
@@ -185,20 +185,20 @@ simulate_data_mis <- function(n,
   X_outcome <- as.matrix(X)
   
   lambda <- exp(0.2*X[,1]^2 + 0.3*X[,2]^2 + 0.1*X[,3]^2 + 0.1*X[,4]^2 + 
-                  X[,1] * X[,2] + X[,3] * X[,4])
+                  X[,1] * X[,3] - X[,3] * X[,4])
   # Simulate the outcome using the cumulative hazard inversion method
   epsilon <- runif(n, min = 1e-8, max = 1)
   T0 <- -log(epsilon) / lambda
   
   # Simulate independent censoring time
-  censoring_lambda <- exp(0.05*X[,1]^2 + 0.05*X[,2]^2-0.1*X[,3]^2 + 0.1*X[,4]^2 + 
+  censoring_lambda <- exp(0.05*X[,1]^2 - 0.01*X[,2]^2+0.05*X[,3]^2 - 0.01*X[,4]^2 + 
                             X[,3] * X[,1] - X[,2]*X[,4])
   epsilon <- runif(n, min = 1e-8, max = 1)
   C <- -log(epsilon) / censoring_lambda
   
   
   # T(1) = T(0) + 1
-  T1 <- T0 + 1
+  T1 <- T0 + 0.3
   
   # True survival time
   T_true <- A * T1 + (1 - A) * T0
