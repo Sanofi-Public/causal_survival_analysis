@@ -67,8 +67,8 @@ editor:
   markdown:  
     wrap:  7
 params:
-  run_simulations: true
-  full_estimators: false
+  run_simulations: false
+  full_estimators: true
 
 ---
 
