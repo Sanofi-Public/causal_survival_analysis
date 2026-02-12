@@ -68,7 +68,8 @@ editor:
     wrap:  7
 params:
   run_simulations: false
-  full_estimators: true
+  full_estimators: false
+  plug_in_bias: false
 
 ---
 
@@ -225,7 +226,7 @@ all_estimates <- function(data, sample.size, tau,
   available_estimators <- c(
     "Naive", "KM", "IPTW KM", "IPCW", "BJ", 
     "IPTW-IPCW", "IPTW-BJ", "G_formula (T-learners)", 
-    "G_formula (S-learner)", "AIPTW-AIPCW", "SurvRM2 - KM", 
+    "G_formula (S-learner)","AIPCW", "AIPTW-AIPCW", "SurvRM2 - KM", 
     "grf - Causal Survival Forest", "RISCA - IPTW KM", 
     "RISCA - G_formula (S-learner)"
   )
@@ -453,6 +454,38 @@ all_estimates <- function(data, sample.size, tau,
     }
   }
   
+  # RMST estimate with AIPCW transformation
+  if ("AIPCW" %in% estimator) {
+    for (survival_method in nuisance_survival) {
+      for (censoring_method in nuisance_censoring) {
+        ATE_aipcw <- AIPCW(data, tau = tau, 
+                     X.names.censoring = X.names.censoring, 
+                     X.names.outcome = X.names.outcome,
+                     nuisance_censoring = censoring_method, 
+                     nuisance_Qt = survival_method, 
+                     n.folds = n.folds_censoring)$RMST
+        if (survival_method == "survival forest"){survival_name = "Forest"}
+        else{survival_name = "Cox"}
+        if (censoring_method == "survival forest"){
+          censoring_name = "Forest"}
+        else{censoring_name = "Cox"}
+        if (censoring_name == survival_name){
+          est_name <- paste("AIPCW (", survival_name, ")", sep = "")
+        }
+        else{
+          est_name <- paste("AIPCW (", survival_name," & ", 
+                            censoring_name , ")", sep = "")}
+        results <- rbind(results, data.frame(
+          "sample.size" = sample.size, 
+          "estimate" = ATE_aipcw, 
+          "estimator" = est_name, 
+          "nuisance" = paste(survival_method, 
+                             censoring_method,
+                             sep = ", ")
+        ))
+      }
+    }
+  }
   
   # RMST estimate with AIPTW with pseudo observations (AIPCW transformation)
   if ("AIPTW-AIPCW" %in% estimator) {
@@ -607,6 +640,7 @@ compute_estimator <- function(n_sim, tau, scenario = "RCT1",
       # Simulate data based on the scenario
       if (scenario == "RCT1") {
         data <- simulate_data_RCT(n, tau = tau, 
+                                  coefC = coefC,
                                   scenario = "RCT1")
       } else if (scenario == "RCT2") {
         data <- simulate_data_RCT(n, tau = tau, 
@@ -682,6 +716,9 @@ save(simulation_rct1, file = "user_runs/simulation_rct1.RData")
 
 ```{r , eval = !params$run_simulations}
 load("results/simulation_rct1.RData")
+load("results/simulation_rct1_final_AIPCW.RData")
+
+simulation_rct1 <- rbind(simulation_rct1,simulation_rct1_aipcw)
 ```
 
 
@@ -692,6 +729,7 @@ desired_order <- c(
   "IPTW KM (Log. Reg.)",
   "IPCW KM (Cox)",
   "BJ (Cox)",
+  "AIPCW (Cox)",
   "IPTW-BJ (Cox & Log. Reg.)",
   "IPTW-IPCW KM (Cox & Log. Reg.)",
   "G-formula (Cox/ T-learners)",
@@ -701,6 +739,7 @@ desired_order <- c(
   "IPTW KM (Forest)",
   "IPCW KM (Forest)",
   "BJ (Forest)",
+  "AIPCW (Forest)",
   "IPTW-BJ (Forest)",
   "IPTW-IPCW KM (Forest)",
   "IPTW-IPCW (Forest)",
@@ -727,9 +766,13 @@ simulation_rct1 <- simulation_rct1 %>%
   filter(estimator !=  "IPCW KM (Cox)")%>%
   filter(estimator !=  "IPCW (Cox)")%>%
   filter(estimator !="BJ (Cox)")%>%
+  filter(estimator !="AIPCW (Cox)")%>%
   filter(estimator !=  "IPCW KM (Forest)")%>%
   filter(estimator !=  "IPCW (Forest)")%>%
-  filter(estimator !="BJ (Forest)")
+  filter(estimator !="BJ (Forest)")%>%
+  filter(estimator !="AIPCW (Forest)")%>%
+  filter(estimator !="AIPCW (Cox & Forest)")%>%
+  filter(estimator !="AIPCW (Forest & Cox)")
 ```
 
 ```{r}
@@ -742,6 +785,7 @@ desired_order <- c(
   "IPCW KM (Cox)",
   "IPCW (Cox)",
   "BJ (Cox)",
+  "AIPCW (Cox)",
   "IPTW-BJ (Cox & Log. Reg.)",
   "IPTW-IPCW KM (Cox & Log. Reg.)",
   "IPTW-IPCW (Cox & Log. Reg.)",
@@ -753,19 +797,24 @@ desired_order <- c(
   "IPCW KM (Forest)",
   "IPCW (Forest)",
   "BJ (Forest)",
+  "AIPCW (Forest)",
   "IPTW-BJ (Forest)",
   "IPTW-IPCW KM (Forest)",
   "IPTW-IPCW (Forest)",
   "G-formula (Forest/ T-learners)",
   "G-formula (Forest/ S-learner)",
   "AIPTW-AIPCW (Forest)",
-    "grf - Causal Survival Forest")
+  "grf - Causal Survival Forest")
 
 simulation_rct1 <- simulation_rct1 %>%
   filter(estimator != "SurvRM2 - KM") %>%
   filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
   filter(estimator != "RISCA - G_formula (S-learner)") %>%
-  filter(estimator != "RISCA - IPTW KM (Forest)")
+  filter(estimator != "RISCA - IPTW KM (Forest)")%>%
+  filter(estimator != "AIPTW-AIPCW (Forest & Cox)") %>%
+  filter(estimator != "AIPCW (Forest & Cox)") %>%
+  filter(estimator != "AIPTW-AIPCW (Cox & Forest)")%>%
+  filter(estimator != "AIPCW (Cox & Forest)")
 ```
 
 ```{r}
@@ -945,7 +994,7 @@ ggsave(
   filename = "figures/fig-11-rct1.pdf",  # nom du fichier
   plot = simulation_graph_rct1,            # objet graphique
   device = "pdf",                          # format
-  width = 22, height = 8,                  # dimensions en pouces
+  width = 23, height = 8,                  # dimensions en pouces
   units = "in"                             # unités (ici, pouces)
 )
 ```
@@ -977,7 +1026,8 @@ simulation_rct2 <- compute_estimator(
   n.folds_survival = 5,
   coefC = 0.03, 
   parsC = c(0.7, 0.3, -0.25, -0.1), 
-  parsC_A = 0
+  parsC_A = 0,
+  estimator = "AIPCW"
 )
 save(simulation_rct2, file = "user_runs/simulation_rct2.RData")
 
@@ -985,26 +1035,30 @@ save(simulation_rct2, file = "user_runs/simulation_rct2.RData")
 
 ```{r , eval = !params$run_simulations}
 load("results/simulation_rct2.RData")
+load("results/simulation_rct2_final_AIPCW.RData")
+simulation_rct2 <- rbind(simulation_rct2,simulation_rct2_aipcw)
 ```
 
 ```{r , eval = !params$full_estimators}
 simulation_rct2 <- simulation_rct2 %>%
   filter(estimator != "SurvRM2 - KM") %>%
   filter(estimator != "KM") %>%
-  filter(estimator !="IPTW KM (Log. Reg.)") %>%
-  filter(estimator !="IPTW KM (Forest)") %>%
-  filter(estimator !="IPTW-BJ (Cox & Log. Reg.)") %>%
-  filter(estimator !="IPTW-BJ (Forest)") %>%
-  filter(estimator !="IPTW-IPCW KM (Cox & Log. Reg.)") %>%
-  filter(estimator !="IPTW-IPCW KM (Forest)") %>%
-  filter(estimator !="IPTW-IPCW (Cox & Log. Reg.)") %>%
-  filter(estimator !="IPTW-IPCW (Forest)") %>%
-  filter(estimator !="AIPTW-AIPCW (Cox & Cox & Log. Reg.)") %>%
-  filter(estimator !="AIPTW-AIPCW (Forest)") %>%
+  filter(estimator != "IPTW KM (Log. Reg.)") %>%
+  filter(estimator != "IPTW KM (Forest)") %>%
+  filter(estimator != "IPTW-BJ (Cox & Log. Reg.)") %>%
+  filter(estimator != "IPTW-BJ (Forest)") %>%
+  filter(estimator != "IPTW-IPCW KM (Cox & Log. Reg.)") %>%
+  filter(estimator != "IPTW-IPCW KM (Forest)") %>%
+  filter(estimator != "IPTW-IPCW (Cox & Log. Reg.)") %>%
+  filter(estimator != "IPTW-IPCW (Forest)") %>%
+  filter(estimator != "AIPTW-AIPCW (Cox & Cox & Log. Reg.)") %>%
+  filter(estimator != "AIPTW-AIPCW (Forest)") %>%
   filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
   filter(estimator != "RISCA - G_formula (S-learner)") %>%
-  filter(estimator != "RISCA - IPTW KM (Forest)")%>%
-  filter(estimator != "grf - Causal Survival Forest")
+  filter(estimator != "RISCA - IPTW KM (Forest)") %>%
+  filter(estimator != "grf - Causal Survival Forest") %>%
+  filter(estimator != "AIPCW (Cox & Forest)") %>%
+  filter(estimator != "AIPCW (Forest & Cox)")
 ```
 
 ```{r}
@@ -1012,7 +1066,9 @@ simulation_rct2 <- simulation_rct2 %>%
   filter(estimator != "SurvRM2 - KM") %>%
   filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
   filter(estimator != "RISCA - G_formula (S-learner)") %>%
-  filter(estimator != "RISCA - IPTW KM (Forest)")
+  filter(estimator != "RISCA - IPTW KM (Forest)") %>%
+  filter(estimator != "AIPCW (Cox & Forest)") %>%
+  filter(estimator != "AIPCW (Forest & Cox)")
 ```
 
 
@@ -1084,7 +1140,7 @@ ggsave(
   filename = "figures/fig-12-rct2.pdf",  # nom du fichier
   plot = simulation_graph_rct2,            # objet graphique
   device = "pdf",                          # format
-  width = 22, height = 8,                  # dimensions en pouces
+  width = 23, height = 8,                  # dimensions en pouces
   units = "in"                             # unités (ici, pouces)
 )
 ```
@@ -1094,7 +1150,7 @@ ggsave(
   filename = "figures/fig-8-rct2.pdf",  # nom du fichier
   plot = simulation_graph_rct2,            # objet graphique
   device = "pdf",                          # format
-  width = 13, height = 7.5,                  # dimensions en pouces
+  width = 13, height = 8,                  # dimensions en pouces
   units = "in"                             # unités (ici, pouces)
 )
 ```
@@ -1208,38 +1264,47 @@ save(simulation_obs1, file = "user_runs/simulation_obs1.RData")
 
 ```{r, eval = !params$run_simulations}
 load("results/simulation_obs1.RData")
+load("results/simulation_obs1_final_AIPCW.RData")
+simulation_obs1 <- rbind(simulation_obs1,simulation_obs1_aipcw)
+
 ```
 
 ```{r, eval = !params$full_estimators}
 simulation_obs1 <- simulation_obs1 %>%
   filter(estimator != "SurvRM2 - KM") %>%
-    filter(estimator != "KM") %>%
-  filter(estimator !="IPTW-BJ (Cox & Log. Reg.)") %>%
-  filter(estimator !="IPTW-BJ (Forest)") %>%
-  filter(estimator !="IPTW-IPCW KM (Cox & Log. Reg.)") %>%
-  filter(estimator !="IPTW-IPCW KM (Forest)") %>%
-  filter(estimator !="IPTW-IPCW (Cox & Log. Reg.)") %>%
-  filter(estimator !="IPTW-IPCW (Forest)") %>%
-  filter(estimator !="AIPTW-AIPCW (Cox & Cox & Log. Reg.)") %>%
-  filter(estimator !="AIPTW-AIPCW (Forest)") %>%
+  filter(estimator != "KM") %>%
+  filter(estimator != "IPTW-BJ (Cox & Log. Reg.)") %>%
+  filter(estimator != "IPTW-BJ (Forest)") %>%
+  filter(estimator != "IPTW-IPCW KM (Cox & Log. Reg.)") %>%
+  filter(estimator != "IPTW-IPCW KM (Forest)") %>%
+  filter(estimator != "IPTW-IPCW (Cox & Log. Reg.)") %>%
+  filter(estimator != "IPTW-IPCW (Forest)") %>%
+  filter(estimator != "AIPTW-AIPCW (Cox & Cox & Log. Reg.)") %>%
+  filter(estimator != "AIPTW-AIPCW (Forest)") %>%
+  filter(estimator != "AIPCW (Cox & Forest)") %>%
+  filter(estimator != "AIPCW (Forest & Cox)") %>%
+  filter(estimator != "AIPCW (Cox)") %>%
+  filter(estimator != "AIPCW (Forest)") %>%
   filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
   filter(estimator != "RISCA - G_formula (S-learner)") %>%
-  filter(estimator != "RISCA - IPTW KM (Forest)")%>%
-  filter(estimator != "grf - Causal Survival Forest")%>%
-  filter(estimator !=  "IPCW KM (Cox)")%>%
-  filter(estimator !=  "IPCW (Cox)")%>%
-  filter(estimator !="BJ (Cox)")%>%
-  filter(estimator !=  "IPCW KM (Forest)")%>%
-  filter(estimator !=  "IPCW (Forest)")%>%
-  filter(estimator !="BJ (Forest)")
+  filter(estimator != "RISCA - IPTW KM (Forest)") %>%
+  filter(estimator != "grf - Causal Survival Forest") %>%
+  filter(estimator != "IPCW KM (Cox)") %>%
+  filter(estimator != "IPCW (Cox)") %>%
+  filter(estimator != "BJ (Cox)") %>%
+  filter(estimator != "IPCW KM (Forest)") %>%
+  filter(estimator != "IPCW (Forest)") %>%
+  filter(estimator != "BJ (Forest)")
 ```
 
 ```{r}
 simulation_obs1 <- simulation_obs1 %>%
-  filter(estimator != "SurvRM2 - KM") %>%
-  filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
-  filter(estimator != "RISCA - G_formula (S-learner)") %>%
-  filter(estimator != "RISCA - IPTW KM (Forest)")
+filter(estimator != "SurvRM2 - KM") %>%
+filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
+filter(estimator != "RISCA - G_formula (S-learner)") %>%
+filter(estimator != "RISCA - IPTW KM (Forest)") %>%
+filter(estimator != "AIPCW (Cox & Forest)") %>%
+filter(estimator != "AIPCW (Forest & Cox)")
 ```
 
 ```{r}
@@ -1307,7 +1372,7 @@ ggsave(
   filename = "figures/fig-13-obs1.pdf",  # nom du fichier
   plot = simulation_graph_obs1,            # objet graphique
   device = "pdf",                          # format
-  width = 22, height = 8,                  # dimensions en pouces
+  width = 23, height = 8,                  # dimensions en pouces
   units = "in"                             # unités (ici, pouces)
 )
 ```
@@ -1345,6 +1410,9 @@ save(simulation_obs2, file = "user_runs/simulation_obs2.RData")
 
 ```{r , eval = !params$run_simulations}
 load("results/simulation_obs2.RData")
+load("results/simulation_obs2_final_AIPCW.RData")
+simulation_obs2 <- rbind(simulation_obs2,simulation_obs2_aipcw)
+
 ```
 
 
@@ -1352,17 +1420,21 @@ load("results/simulation_obs2.RData")
 simulation_obs2 <- simulation_obs2 %>%
   filter(estimator != "SurvRM2 - KM") %>%
   filter(estimator != "KM") %>%
-  filter(estimator !=  "IPTW KM (Log. Reg.)")%>%
+  filter(estimator != "IPTW KM (Log. Reg.)")%>%
   filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
   filter(estimator != "RISCA - G_formula (S-learner)") %>%
   filter(estimator != "RISCA - IPTW KM (Forest)")%>%
-  filter(estimator !=  "IPCW KM (Cox)")%>%
-  filter(estimator !=  "IPCW (Cox)")%>%
-  filter(estimator !="BJ (Cox)")%>%
-  filter(estimator !=  "IPTW KM (Forest)")%>%
-  filter(estimator !=  "IPCW KM (Forest)")%>%
-  filter(estimator !=  "IPCW (Forest)")%>%
-  filter(estimator !="BJ (Forest)")
+  filter(estimator != "IPCW KM (Cox)")%>%
+  filter(estimator != "IPCW (Cox)")%>%
+  filter(estimator != "AIPCW (Cox)")%>%
+  filter(estimator != "AIPCW (Forest)")%>%
+  filter(estimator != "AIPCW (Cox & Forest)")%>%
+  filter(estimator != "AIPCW (Forest & Cox)") %>%
+  filter(estimator != "BJ (Cox)")%>%
+  filter(estimator != "IPTW KM (Forest)")%>%
+  filter(estimator != "IPCW KM (Forest)")%>%
+  filter(estimator != "IPCW (Forest)")%>%
+  filter(estimator != "BJ (Forest)")
 ```
 
 ```{r}
@@ -1370,7 +1442,9 @@ simulation_obs2 <- simulation_obs2 %>%
   filter(estimator != "SurvRM2 - KM") %>%
   filter(estimator != "RISCA - IPTW KM (Log. Reg.)") %>%
   filter(estimator != "RISCA - G_formula (S-learner)") %>%
-  filter(estimator != "RISCA - IPTW KM (Forest)")
+  filter(estimator != "RISCA - IPTW KM (Forest)")%>%
+  filter(estimator != "AIPCW (Cox & Forest)")%>%
+  filter(estimator != "AIPCW (Forest & Cox)") 
 ```
 
 ```{r   message=FALSE, warning=FALSE}
@@ -1435,7 +1509,7 @@ ggsave(
   filename = "figures/fig-14-obs2.pdf",  # nom du fichier
   plot = simulation_graph_obs2,            # objet graphique
   device = "pdf",                          # format
-  width = 22, height = 8,                  # dimensions en pouces
+  width = 23, height = 8,                  # dimensions en pouces
   units = "in"                             # unités (ici, pouces)
 )
 ```
@@ -1449,6 +1523,14 @@ ggsave(
   units = "in"                             # unités (ici, pouces)
 )
 ```
+
+```{r, eval = params$plug_in_bias}
+data <- simulate_data_obs(n=50000, tau=25,   coefC = 0.03, 
+  parsC = c(0.7, 0.3, -0.25, -0.1), scenario = "Obs2")
+test_plug_in <- g_formula_T_learner(data, tau=25, X.names.outcome = c("X1", "X2", "X3", "X4"), nuisance_survival = "survival forest", n.folds=5)
+bias <- test_plug_in - truth_tau4
+```
+
 
 ## Misspecification of the nuisance components simulations
 
@@ -1666,6 +1748,9 @@ print(paste0("The ground truth for mis scenario at time 1 is ", round(truth_comp
 ```{r , eval = params$run_simulations}
 n_sim <- 100
 tau <- 1
+estimators <-  c(
+  "Naive", "IPTW-IPCW KM", "IPTW-BJ", "G_formula (T-learners)", "AIPTW-AIPCW" 
+)
 mis <- compute_estimator_mispec(n_sim, tau = tau, 
                                    X.names.propensity = c("I(X1^2)", "I(X2^2)",
                                                           "I(X3^2)", "I(X4^2)", 

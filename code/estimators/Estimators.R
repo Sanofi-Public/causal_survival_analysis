@@ -685,6 +685,10 @@ AIPCW <-function(data,
   
   data$S_C_hat_T_obs_tau <- S_C_hat$S_hat[cbind(seq_along(Y.index), Y.index)]
   
+  # Truncation of S_C 
+  eps_w <- 1e-3      
+  data$S_C_safe <- pmax(data$S_C_hat_T_obs_tau, eps_w)
+  
   
   if (is.null(h_C_hat)) {
     h_C_hat <- estimate_hazard_function(S_C_hat$S_hat,Y.grid)
@@ -702,11 +706,11 @@ AIPCW <-function(data,
   
   # Compute first term
   data$first_term <- (data$T_obs_tau * data$status_tau) / 
-    data$S_C_hat_T_obs_tau
+    data$S_C_safe
   
   # Compute second term
   data$second_term <- (data$Q.Y.hat * (1 - data$status_tau)) / 
-    data$S_C_hat_T_obs_tau
+    data$S_C_safe
   
   Y.diff <- diff(c(0, Y.grid))
   
@@ -718,8 +722,11 @@ AIPCW <-function(data,
   
   # Compute pseudo outcome
   pseudo_outcome <- data$first_term + data$second_term - data$third_term
+  data$pseudo_outcome <- pseudo_outcome
+  RMST <- mean(data$pseudo_outcome[data$A == 1]) - mean(data$pseudo_outcome[data$A == 0])
   
-  return(pseudo_outcome) 
+  return(list(pseudo_outcome=pseudo_outcome,
+              RMST =RMST)) 
 }
 
 
@@ -778,7 +785,7 @@ AIPTW_AIPCW <- function(data,
     nuisance_Qt = nuisance_Qt, 
     nuisance_censoring = nuisance_censoring, 
     n.folds = n.folds
-  )
+  )$pseudo_outcome
   
   data$TDR <- TDR
   
